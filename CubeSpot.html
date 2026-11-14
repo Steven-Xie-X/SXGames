@@ -222,8 +222,8 @@
         /* 坐标轴网格布局 */
         .cube-inner-wrapper {
             display: grid;
-            grid-template-columns: 20px auto; /* 缩小坐标轴宽度 */
-            grid-template-rows: 20px auto;    /* 缩小坐标轴高度 */
+            grid-template-columns: 20px auto; 
+            grid-template-rows: 20px auto;
             justify-content: center;
             align-content: center;
             width: 100%;
@@ -243,6 +243,7 @@
             padding: 0;
             margin: 0;
             cursor: grab;
+            aspect-ratio: 1 / 1; /* 强制画布本身保持正方形比例 */
         }
         .main-canvas:active { cursor: grabbing; }
 
@@ -759,36 +760,40 @@
             
             const dpr = window.devicePixelRatio || 1;
             
-            canvasLeft.style.width = gridSize + 'px';
-            canvasLeft.style.height = gridSize + 'px';
-            canvasLeft.width = Math.floor(gridSize * dpr);
-            canvasLeft.height = Math.floor(gridSize * dpr);
+            // 强制正方形物理尺寸和 CSS 尺寸，防止挤压拉伸
+            const physicalSize = Math.floor(gridSize * dpr);
+            const cssSize = physicalSize / dpr;
             
-            canvasRight.style.width = gridSize + 'px';
-            canvasRight.style.height = gridSize + 'px';
-            canvasRight.width = Math.floor(gridSize * dpr);
-            canvasRight.height = Math.floor(gridSize * dpr);
+            canvasLeft.style.width = cssSize + 'px';
+            canvasLeft.style.height = cssSize + 'px';
+            canvasLeft.width = physicalSize;
+            canvasLeft.height = physicalSize;
+            
+            canvasRight.style.width = cssSize + 'px';
+            canvasRight.style.height = cssSize + 'px';
+            canvasRight.width = physicalSize;
+            canvasRight.height = physicalSize;
             
             const axisSize = 20;
-            axisTopLeft.style.width = gridSize + 'px';
+            axisTopLeft.style.width = cssSize + 'px';
             axisTopLeft.style.height = axisSize + 'px';
-            axisTopLeft.width = Math.floor(gridSize * dpr);
+            axisTopLeft.width = physicalSize;
             axisTopLeft.height = Math.floor(axisSize * dpr);
             
-            axisTopRight.style.width = gridSize + 'px';
+            axisTopRight.style.width = cssSize + 'px';
             axisTopRight.style.height = axisSize + 'px';
-            axisTopRight.width = Math.floor(gridSize * dpr);
+            axisTopRight.width = physicalSize;
             axisTopRight.height = Math.floor(axisSize * dpr);
             
             axisLeftLeft.style.width = axisSize + 'px';
-            axisLeftLeft.style.height = gridSize + 'px';
+            axisLeftLeft.style.height = cssSize + 'px';
             axisLeftLeft.width = Math.floor(axisSize * dpr);
-            axisLeftLeft.height = Math.floor(gridSize * dpr);
+            axisLeftLeft.height = physicalSize;
             
             axisLeftRight.style.width = axisSize + 'px';
-            axisLeftRight.style.height = gridSize + 'px';
+            axisLeftRight.style.height = cssSize + 'px';
             axisLeftRight.width = Math.floor(axisSize * dpr);
-            axisLeftRight.height = Math.floor(gridSize * dpr);
+            axisLeftRight.height = physicalSize;
 
             applyPanLimits();
             drawCubeBoard();
@@ -806,7 +811,6 @@
 
             const fontSize = Math.max(10, Math.min(16, cellSize * 0.6));
             
-            // 计算动态刻度步长，防止重叠
             const effectiveCellSize = cellSize * state.zoom;
             let labelStep = 1;
 
@@ -820,7 +824,6 @@
                 else labelStep = 100;
             }
             
-            // 小盘面强制显示全部
             if (cols <= 20 && state.zoom >= 0.8) {
                 labelStep = 1;
             }
@@ -948,21 +951,20 @@
             ctxRight.scale(state.zoom, state.zoom);
 
             const cols = settingsCube.size;
-            const pCell = canvasLeft.width / cols; 
+            
+            // 使用纯物理像素均分，不取整，确保绝对正方形
+            const pCell = physicalW / cols; 
             const lineWidth = pCell > 3 ? Math.max(1, Math.floor(1 * dpr)) : 0;
+            const fillW = pCell - lineWidth;
+            const fillH = pCell - lineWidth;
 
             for (let i = 0; i < state.grid.length; i++) {
                 const b = state.grid[i];
                 const row = Math.floor(i / cols);
                 const col = i % cols;
                 
-                const px = Math.round(col * pCell);
-                const py = Math.round(row * pCell);
-                const nextPx = Math.round((col + 1) * pCell);
-                const nextPy = Math.round((row + 1) * pCell);
-                
-                const fillW = nextPx - px - lineWidth;
-                const fillH = nextPy - py - lineWidth;
+                const px = col * pCell;
+                const py = row * pCell;
 
                 let fillColorLeft = b.left.color;
                 let fillColorRight = b.right.color;
