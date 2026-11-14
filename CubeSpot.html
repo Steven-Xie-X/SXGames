@@ -68,25 +68,25 @@
             align-items: center;
             flex-shrink: 0; 
             width: 100%;
-            padding-top: 8px;
+            padding-top: 4px;
             transition: all 0.3s;
         }
 
         .game-title {
             display: flex;
-            gap: 8px;
-            margin: 5px 0 10px;
+            gap: 6px;
+            margin: 2px 0 4px;
         }
 
         .title-char {
             display: flex;
             justify-content: center;
             align-items: center;
-            width: clamp(28px, 4.5vh, 42px);
-            height: clamp(28px, 4.5vh, 42px);
+            width: clamp(24px, 3.5vh, 32px);
+            height: clamp(24px, 3.5vh, 32px);
             background-color: #ffffff;
             border-radius: 6px;
-            font-size: clamp(18px, 3vh, 28px);
+            font-size: clamp(14px, 2.2vh, 20px);
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
@@ -98,13 +98,13 @@
 
         .controls {
             display: flex;
-            gap: 15px;
-            margin-bottom: 8px;
+            gap: 10px;
+            margin-bottom: 2px;
         }
 
         .btn {
-            padding: 8px 24px;
-            font-size: clamp(14px, 2vh, 18px);
+            padding: 4px 16px;
+            font-size: clamp(12px, 1.8vh, 15px);
             font-weight: bold;
             border: none;
             border-radius: 6px;
@@ -128,19 +128,19 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
-            font-size: clamp(14px, 2vh, 20px);
+            gap: 10px;
+            font-size: clamp(11px, 1.6vh, 14px);
             font-weight: bold;
             font-family: monospace;
-            margin-bottom: 8px;
-            min-width: 320px;
+            margin-bottom: 2px;
+            min-width: 280px;
         }
 
         .timer { color: #93c5fd; }
         .level-id { color: #fca5a5; }
         .play-mode-display {
             color: #a78bfa;
-            padding: 0 10px;
+            padding: 0 8px;
             border-left: 1px solid #475569;
             border-right: 1px solid #475569;
         }
@@ -149,20 +149,20 @@
         .header {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            font-size: clamp(14px, 2.2vh, 18px);
+            gap: 12px;
+            font-size: clamp(12px, 2vh, 15px);
             font-weight: bold;
             background: rgba(19, 23, 36, 0.8);
-            padding: 6px 25px;
+            padding: 2px 12px;
             border-radius: 10px;
             border: 1px solid var(--block-border);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            margin-bottom: 10px;
+            margin-bottom: 2px;
         }
 
         .header span {
             font-family: monospace;
-            font-size: clamp(16px, 2.5vh, 22px);
+            font-size: clamp(14px, 2.2vh, 18px);
             margin-left: 5px;
         }
 
@@ -185,7 +185,7 @@
         .review-controls {
             display: none; 
             gap: 20px; 
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             justify-content: center;
             width: 100%;
         }
@@ -222,8 +222,8 @@
         /* 坐标轴网格布局 */
         .cube-inner-wrapper {
             display: grid;
-            grid-template-columns: 24px auto; 
-            grid-template-rows: 24px auto;
+            grid-template-columns: 20px auto; /* 缩小坐标轴宽度 */
+            grid-template-rows: 20px auto;    /* 缩小坐标轴高度 */
             justify-content: center;
             align-content: center;
             width: 100%;
@@ -259,7 +259,7 @@
                 flex-direction: row;
                 justify-content: center;
                 align-items: center;
-                gap: 3vw;
+                gap: 2vw;
                 padding: 0;
                 height: 100%;
                 overflow: hidden;
@@ -267,7 +267,7 @@
             body .cube-board-wrapper {
                 height: 98%;
                 width: auto;
-                max-height: 100%;
+                max-width: 48%;
                 flex-shrink: 0;
                 aspect-ratio: 1 / 1;
             }
@@ -292,19 +292,20 @@
                 margin: 0 auto;
             }
 
-            /* 非全屏模式下 */
+            /* 非全屏模式下：严格居中不截断，平分空间 */
             body:not(.is-fullscreen) .game-container {
                 flex-direction: column;
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center;
-                gap: 1vh;
-                padding: 0;
+                gap: 4px;
+                padding: 4px 0 0 0;
                 height: 100%;
                 overflow: hidden;
             }
             body:not(.is-fullscreen) .cube-board-wrapper {
-                width: 96%;
-                max-height: 49.5%;
+                width: 100%;
+                max-width: 96vw;
+                max-height: 49%; 
                 aspect-ratio: 1 / 1;
                 flex-shrink: 1;
                 margin: 0 auto;
@@ -748,13 +749,14 @@
             const wRight = wrapperRight.clientWidth;
             const hRight = wrapperRight.clientHeight;
             
-            const maxSizeLeft = Math.floor(Math.min(wLeft - 24, hLeft - 24));
-            const maxSizeRight = Math.floor(Math.min(wRight - 24, hRight - 24));
+            const maxSizeLeft = Math.min(wLeft - 20, hLeft - 20);
+            const maxSizeRight = Math.min(wRight - 20, hRight - 20);
             
             if (maxSizeLeft <= 0 || maxSizeRight <= 0) return;
 
-            cellSize = Math.max(1, Math.floor(Math.min(maxSizeLeft, maxSizeRight) / settingsCube.size));
-            const gridSize = cellSize * settingsCube.size;
+            const gridSize = Math.min(maxSizeLeft, maxSizeRight);
+            cellSize = gridSize / settingsCube.size;
+            
             const dpr = window.devicePixelRatio || 1;
             
             canvasLeft.style.width = gridSize + 'px';
@@ -767,7 +769,7 @@
             canvasRight.width = Math.floor(gridSize * dpr);
             canvasRight.height = Math.floor(gridSize * dpr);
             
-            const axisSize = 24;
+            const axisSize = 20;
             axisTopLeft.style.width = gridSize + 'px';
             axisTopLeft.style.height = axisSize + 'px';
             axisTopLeft.width = Math.floor(gridSize * dpr);
@@ -804,8 +806,24 @@
 
             const fontSize = Math.max(10, Math.min(16, cellSize * 0.6));
             
+            // 计算动态刻度步长，防止重叠
             const effectiveCellSize = cellSize * state.zoom;
-            const isCompact = effectiveCellSize < 18; 
+            let labelStep = 1;
+
+            if (effectiveCellSize < 30) {
+                labelStep = Math.ceil(32 / effectiveCellSize);
+                if (labelStep <= 2) labelStep = 2;
+                else if (labelStep <= 5) labelStep = 5;
+                else if (labelStep <= 10) labelStep = 10;
+                else if (labelStep <= 20) labelStep = 20;
+                else if (labelStep <= 50) labelStep = 50;
+                else labelStep = 100;
+            }
+            
+            // 小盘面强制显示全部
+            if (cols <= 20 && state.zoom >= 0.8) {
+                labelStep = 1;
+            }
 
             ctxAxisTopLeft.font = `${fontSize * dpr}px monospace`;
             ctxAxisTopLeft.fillStyle = '#cbd5e1';
@@ -817,8 +835,10 @@
             ctxAxisTopRight.textAlign = ctxAxisTopLeft.textAlign;
             ctxAxisTopRight.textBaseline = ctxAxisTopLeft.textBaseline;
 
+            const cellW = axisTopLeft.width / cols;
+
             for (let i = 0; i < cols; i++) {
-                const baseX = i * cellSize * dpr + (cellSize * dpr) / 2;
+                const baseX = Math.round(i * cellW + cellW / 2);
                 const centerX = baseX * state.zoom + state.panX * dpr;
                 const val = i + 1;
                 const text = String(val);
@@ -835,28 +855,23 @@
                     drawX = 2 * dpr;
                 }
 
-                if (!isCompact) {
+                if (labelStep === 1 || val % labelStep === 0 || val === cols) {
                     ctxAxisTopLeft.fillText(text, drawX, axisTopLeft.height / 2);
                     ctxAxisTopRight.fillText(text, drawX, axisTopRight.height / 2);
                 } else {
-                    if (val % 10 === 0 || val === cols) {
-                        ctxAxisTopLeft.fillText(text, drawX, axisTopLeft.height / 2);
-                        ctxAxisTopRight.fillText(text, drawX, axisTopRight.height / 2);
-                    } else {
-                        ctxAxisTopLeft.beginPath();
-                        ctxAxisTopLeft.moveTo(centerX, axisTopLeft.height - 4 * dpr);
-                        ctxAxisTopLeft.lineTo(centerX, axisTopLeft.height);
-                        ctxAxisTopLeft.strokeStyle = '#64748b';
-                        ctxAxisTopLeft.lineWidth = 1 * dpr;
-                        ctxAxisTopLeft.stroke();
-                        
-                        ctxAxisTopRight.beginPath();
-                        ctxAxisTopRight.moveTo(centerX, axisTopRight.height - 4 * dpr);
-                        ctxAxisTopRight.lineTo(centerX, axisTopRight.height);
-                        ctxAxisTopRight.strokeStyle = '#64748b';
-                        ctxAxisTopRight.lineWidth = 1 * dpr;
-                        ctxAxisTopRight.stroke();
-                    }
+                    ctxAxisTopLeft.beginPath();
+                    ctxAxisTopLeft.moveTo(centerX, axisTopLeft.height - 4 * dpr);
+                    ctxAxisTopLeft.lineTo(centerX, axisTopLeft.height);
+                    ctxAxisTopLeft.strokeStyle = '#64748b';
+                    ctxAxisTopLeft.lineWidth = 1 * dpr;
+                    ctxAxisTopLeft.stroke();
+                    
+                    ctxAxisTopRight.beginPath();
+                    ctxAxisTopRight.moveTo(centerX, axisTopRight.height - 4 * dpr);
+                    ctxAxisTopRight.lineTo(centerX, axisTopRight.height);
+                    ctxAxisTopRight.strokeStyle = '#64748b';
+                    ctxAxisTopRight.lineWidth = 1 * dpr;
+                    ctxAxisTopRight.stroke();
                 }
             }
 
@@ -870,8 +885,10 @@
             ctxAxisLeftRight.textAlign = ctxAxisLeftLeft.textAlign;
             ctxAxisLeftRight.textBaseline = ctxAxisLeftLeft.textBaseline;
 
+            const cellH = axisLeftLeft.height / cols;
+
             for (let i = 0; i < cols; i++) {
-                const baseY = i * cellSize * dpr + (cellSize * dpr) / 2;
+                const baseY = Math.round(i * cellH + cellH / 2);
                 const centerY = baseY * state.zoom + state.panY * dpr;
                 const val = i + 1;
                 const text = String(val);
@@ -888,28 +905,23 @@
                     drawY = textHeight / 2 + 2 * dpr;
                 }
 
-                if (!isCompact) {
+                if (labelStep === 1 || val % labelStep === 0 || val === cols) {
                     ctxAxisLeftLeft.fillText(text, axisLeftLeft.width / 2, drawY);
                     ctxAxisLeftRight.fillText(text, axisLeftRight.width / 2, drawY);
                 } else {
-                    if (val % 10 === 0 || val === cols) {
-                        ctxAxisLeftLeft.fillText(text, axisLeftLeft.width / 2, drawY);
-                        ctxAxisLeftRight.fillText(text, axisLeftRight.width / 2, drawY);
-                    } else {
-                        ctxAxisLeftLeft.beginPath();
-                        ctxAxisLeftLeft.moveTo(axisLeftLeft.width - 4 * dpr, centerY);
-                        ctxAxisLeftLeft.lineTo(axisLeftLeft.width, centerY);
-                        ctxAxisLeftLeft.strokeStyle = '#64748b';
-                        ctxAxisLeftLeft.lineWidth = 1 * dpr;
-                        ctxAxisLeftLeft.stroke();
-                        
-                        ctxAxisLeftRight.beginPath();
-                        ctxAxisLeftRight.moveTo(axisLeftRight.width - 4 * dpr, centerY);
-                        ctxAxisLeftRight.lineTo(axisLeftRight.width, centerY);
-                        ctxAxisLeftRight.strokeStyle = '#64748b';
-                        ctxAxisLeftRight.lineWidth = 1 * dpr;
-                        ctxAxisLeftRight.stroke();
-                    }
+                    ctxAxisLeftLeft.beginPath();
+                    ctxAxisLeftLeft.moveTo(axisLeftLeft.width - 4 * dpr, centerY);
+                    ctxAxisLeftLeft.lineTo(axisLeftLeft.width, centerY);
+                    ctxAxisLeftLeft.strokeStyle = '#64748b';
+                    ctxAxisLeftLeft.lineWidth = 1 * dpr;
+                    ctxAxisLeftLeft.stroke();
+                    
+                    ctxAxisLeftRight.beginPath();
+                    ctxAxisLeftRight.moveTo(axisLeftRight.width - 4 * dpr, centerY);
+                    ctxAxisLeftRight.lineTo(axisLeftRight.width, centerY);
+                    ctxAxisLeftRight.strokeStyle = '#64748b';
+                    ctxAxisLeftRight.lineWidth = 1 * dpr;
+                    ctxAxisLeftRight.stroke();
                 }
             }
         }
@@ -936,20 +948,21 @@
             ctxRight.scale(state.zoom, state.zoom);
 
             const cols = settingsCube.size;
-            const pCell = cellSize * dpr;
-            
-            const lineWidth = cellSize > 3 ? Math.max(1, Math.floor(1 * dpr)) : 0;
+            const pCell = canvasLeft.width / cols; 
+            const lineWidth = pCell > 3 ? Math.max(1, Math.floor(1 * dpr)) : 0;
 
             for (let i = 0; i < state.grid.length; i++) {
                 const b = state.grid[i];
                 const row = Math.floor(i / cols);
                 const col = i % cols;
                 
-                const px = col * pCell;
-                const py = row * pCell;
+                const px = Math.round(col * pCell);
+                const py = Math.round(row * pCell);
+                const nextPx = Math.round((col + 1) * pCell);
+                const nextPy = Math.round((row + 1) * pCell);
                 
-                const fillW = pCell - lineWidth;
-                const fillH = pCell - lineWidth;
+                const fillW = nextPx - px - lineWidth;
+                const fillH = nextPy - py - lineWidth;
 
                 let fillColorLeft = b.left.color;
                 let fillColorRight = b.right.color;
@@ -968,7 +981,6 @@
                     fillColorLeft = '#FFFFFF';
                     fillColorRight = '#FFFFFF';
                 } else if (b.found) {
-                    // 挑战模式正确找出的格子，填充变为白色
                     fillColorLeft = '#FFFFFF';
                     fillColorRight = '#FFFFFF';
                 }
@@ -984,7 +996,7 @@
                 }
                 
                 if (!state.isShowingAnswer && !state.isReviewing) {
-                    if (cellSize > 6 && (b.found || state.selectedIds.includes(b.id))) {
+                    if (pCell > 6 && (b.found || state.selectedIds.includes(b.id))) {
                         let strokeColor = '#FFFFFF'; 
                         
                         ctxLeft.strokeStyle = strokeColor;
@@ -1276,12 +1288,10 @@
             reviewControls.style.display = 'flex';
             document.querySelector('.mistake-container').style.display = 'none';
             
-            // 确保图标都显示（不再隐藏）
             document.getElementById('settings-btn').style.display = 'flex';
             document.getElementById('coord-btn').style.display = settingsCube.isPractice ? 'flex' : 'none';
             document.getElementById('answer-btn').style.display = settingsCube.isPractice ? 'flex' : 'none';
             
-            // 复位视口
             state.zoom = 1;
             state.panX = 0;
             state.panY = 0;
@@ -1299,19 +1309,16 @@
             const row = Math.floor(targetId / cols);
             const col = targetId % cols;
             
-            // 目标可视范围约为 10x10
             const targetVisibleCells = 10;
             let targetZoom = Math.max(1, cols / targetVisibleCells);
-            targetZoom = Math.min(targetZoom, 20); // 限制最大缩放
+            targetZoom = Math.min(targetZoom, 20); 
             
             const canvasW = canvasLeft.clientWidth;
             const canvasH = canvasLeft.clientHeight;
             
-            // 目标格子的中心坐标（在缩放前的画布坐标系中）
             const cx = (col + 0.5) * cellSize;
             const cy = (row + 0.5) * cellSize;
             
-            // 计算需要的平移量，让目标格子的中心位于视口中心
             let newPanX = canvasW / 2 - cx * targetZoom;
             let newPanY = canvasH / 2 - cy * targetZoom;
             
@@ -1439,8 +1446,17 @@
             }
             
             state.grid = [];
-            drawCubeBoard(); 
-            drawAxes();
+            
+            // 清空画布，防止残留旧尺寸的刻度线
+            ctxLeft.clearRect(0, 0, canvasLeft.width, canvasLeft.height);
+            ctxRight.clearRect(0, 0, canvasRight.width, canvasRight.height);
+            ctxAxisTopLeft.clearRect(0, 0, axisTopLeft.width, axisTopLeft.height);
+            ctxAxisTopRight.clearRect(0, 0, axisTopRight.width, axisTopRight.height);
+            ctxAxisLeftLeft.clearRect(0, 0, axisLeftLeft.width, axisLeftLeft.height);
+            ctxAxisLeftRight.clearRect(0, 0, axisLeftRight.width, axisLeftRight.height);
+            
+            // 延时等待DOM排版更新后重绘
+            setTimeout(resizeCanvas, 50);
             
             updateUI();
         }
