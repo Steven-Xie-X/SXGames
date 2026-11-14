@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小游戏合集 | 星空版</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ================= 整体背景与动态元素 ================= */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            /* 更深的宇宙蓝底色 */
+            background-color: #050510; 
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 1. Canvas 星空背景层 */
+        #starCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 2. 动态极光光晕 (Auroras) */
+        .aurora {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: 1;
+            opacity: 0.5;
+            mix-blend-mode: screen;
+        }
+        
+        .aurora-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #4a00e0, transparent 70%);
+            top: -15%;
+            left: -10%;
+            animation: float1 15s infinite alternate ease-in-out;
+        }
+
+        .aurora-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #00b4db, transparent 70%);
+            bottom: -10%;
+            right: -10%;
+            animation: float2 18s infinite alternate ease-in-out;
+        }
+
+        .aurora-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #ff007f, transparent 70%);
+            top: 30%;
+            left: 60%;
+            animation: float3 12s infinite alternate ease-in-out;
+        }
+
+        @keyframes float1 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 50px) scale(1.2); }
+        }
+        @keyframes float2 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-80px, -60px) scale(1.3); }
+        }
+        @keyframes float3 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-50px, 80px) scale(1.1); }
+        }
+
+        /* 3. 流星特效 */
+        .meteor {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+            z-index: 2;
+            opacity: 0;
+        }
+        
+        /* 流星尾巴 */
+        .meteor::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 150px;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
+            right: 0; /* 尾巴朝左 */
+        }
+
+        .meteor:nth-child(1) { top: 10%; right: 10%; animation: meteorFall 4s linear infinite; animation-delay: 0s; }
+        .meteor:nth-child(2) { top: 20%; right: 40%; animation: meteorFall 6s linear infinite; animation-delay: 2s; }
+        .meteor:nth-child(3) { top: 5%; right: 70%; animation: meteorFall 5s linear infinite; animation-delay: 4s; }
+        .meteor:nth-child(4) { top: 40%; right: 20%; animation: meteorFall 7s linear infinite; animation-delay: 1s; }
+
+        @keyframes meteorFall {
+            0% { transform: rotate(-45deg) translateX(0); opacity: 1; }
+            20% { opacity: 0; }
+            100% { transform: rotate(-45deg) translateX(-1000px); opacity: 0; }
+        }
+
+        /* 4. 呼吸网格背景 */
+        .bg-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 1;
+            mask-image: radial-gradient(circle at center, black 10%, transparent 70%);
+            -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 70%);
+            animation: pulseGrid 10s infinite alternate;
+        }
+
+        @keyframes pulseGrid {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+
+        /* ================= 主要内容容器 ================= */
+        .content-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ================= 顶部标题 ================= */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #ffffff, #a4c8ff, #ffb8f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* 强烈的霓虹发光效果 */
+            filter: drop-shadow(0 0 20px rgba(164, 200, 255, 0.6));
+            animation: titleFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b0b3d6;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(176, 179, 214, 0.5);
+        }
+
+        /* ================= 游戏卡片网格 ================= */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 35px;
+            width: 100%;
+            perspective: 1000px; /* 为3D效果提供透视 */
+        }
+
+        /* ================= 卡片样式 ================= */
+        .game-card {
+            background: rgba(20, 20, 45, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 50px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #ffffff;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+        }
+
+        /* 卡片悬浮时的发光边框和流光 */
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 2px; /* 边框粗细 */
+            background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent 40%, transparent 60%, rgba(255,255,255,0.5));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.3;
+            transition: opacity 0.4s ease;
+        }
+
+        /* 卡片内部高光点 */
+        .game-card::after {
+            content: '';
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            top: -50px;
+            left: -50px;
+            border-radius: 50%;
+            transition: transform 0.5s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-12px) scale(1.03) rotateX(5deg) rotateY(-5deg);
+            background: rgba(30, 30, 65, 0.6);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(110, 138, 255, 0.2);
+        }
+
+        .game-card:hover::before {
+            opacity: 1; /* 边框亮起 */
+        }
+        
+        .game-card:hover::after {
+            transform: translate(100px, 100px); /* 高光点移动 */
+        }
+
+        /* 图标 */
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 25px;
+            transition: transform 0.4s ease;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            z-index: 1;
+        }
+
+        .game-card:hover .game-icon {
+            transform: translateZ(30px) scale(1.15); /* 3D悬浮 */
+        }
+
+        /* 文字 */
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #e0e5ff;
+            transition: all 0.3s ease;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .game-card:hover .game-title {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            transform: translateZ(20px);
+        }
+
+        /* 占位符卡片 */
+        .game-card.placeholder {
+            opacity: 0.4;
+            cursor: default;
+            border-style: dashed;
+        }
+        .game-card.placeholder:hover {
+            transform: none;
+            background: rgba(20, 20, 45, 0.4);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        .game-card.placeholder:hover::before { opacity: 0.3; }
+        .game-card.placeholder:hover::after { transform: none; }
+        .game-card.placeholder:hover .game-icon { transform: none; }
+        .game-card.placeholder:hover .game-title { color: #e0e5ff; text-shadow: none; transform: none; }
+
+        /* ================= 底部信息 ================= */
+        footer {
+            margin-top: 70px;
+            color: #6b709c;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        /* ================= 响应式 ================= */
+        @media (max-width: 650px) {
+            h1 { font-size: 2.8rem; }
+            .game-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .game-card {
+                padding: 35px 20px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 25px;
+                border-radius: 20px;
+            }
+            .game-icon { margin-bottom: 0; font-size: 2.8rem; }
+            .game-card:hover {
+                transform: translateY(-5px) scale(1.02); /* 手机端取消3D旋转 */
+            }
+            .game-card:hover .game-icon { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 星星 Canvas 层 -->
+    <canvas id="starCanvas"></canvas>
+
+    <!-- 2. 流星层 -->
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+
+    <!-- 3. 极光光晕层 -->
+    <div class="aurora aurora-1"></div>
+    <div class="aurora aurora-2"></div>
+    <div class="aurora aurora-3"></div>
+
+    <!-- 4. 呼吸网格层 -->
+    <div class="bg-grid"></div>
+
+    <!-- 主要内容 -->
+    <div class="content-wrapper">
+        <header>
+            <h1>小游戏合集</h1>
+            <p class="subtitle">挑一个，随时开玩</p>
+        </header>
+
+        <div class="game-grid">
+            <!-- 游戏 1：魔方找茬 -->
+            <a href="CubeSpot.html" class="game-card">
+                <div class="game-icon">🧊</div>
+                <div class="game-title">魔方找茬</div>
+            </a>
+
+            <!-- 占位符 -->
+            <a href="javascript:void(0);" class="game-card placeholder">
+                <div class="game-icon">🎨</div>
+                <div class="game-title">敬请期待</div>
+            </a>
+
+            <a href="javascript:void(0);" class="game-card placeholder">
+                <div class="game-icon">🧠</div>
+                <div class="game-title">敬请期待</div>
+            </a>
+
+            <a href="javascript:void(0);" class="game-card placeholder">
+                <div class="game-icon">🔢</div>
+                <div class="game-title">敬请期待</div>
+            </a>
+        </div>
+
+        <footer>
+            共 1 款小游戏 · 持续更新中
+        </footer>
+    </div>
+
+    <!-- JavaScript 动态星空生成 -->
+    <script>
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let stars = [];
+
+        // 初始化画布尺寸
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            stars = []; // 清空星星
+            // 生成 150 颗星星
+            for (let i = 0; i < 150; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        // 星星类
+        class Star {
+            constructor() {
+                this.reset();
+                // 初始位置随机分布在整个屏幕
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 1.5 + 0.5; // 大小 0.5 - 2
+                this.opacity = Math.random() * 0.8 + 0.2; // 透明度
+                this.speed = Math.random() * 0.05 + 0.02; // 闪烁速度
+                this.direction = Math.random() > 0.5 ? 1 : -1; // 闪烁方向
+                // 缓慢漂移
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
+            }
+
+            update() {
+                // 闪烁逻辑
+                this.opacity += this.speed * this.direction;
+                if (this.opacity > 1 || this.opacity < 0.1) {
+                    this.direction *= -1;
+                }
+
+                // 移动逻辑
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界重置
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                    this.reset();
+                }
+
+                this.draw();
+            }
+        }
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            stars.forEach(star => star.update());
+            requestAnimationFrame(animate);
+        }
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', initCanvas);
+
+        // 启动
+        initCanvas();
+        animate();
+    </script>
+
+</body>
+</html>
