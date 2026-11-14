@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>魔方找茬</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --panel-bg: #0d111a;
+            --text-main: #e2e8f0;
+            --text-found: #facc15;
+            --text-remaining: #4ade80;
+            --text-mistake: #f87171;
+            --success-glow: #4ade80;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* 顶部固定控制按钮 */
+        .fixed-btn {
+            position: fixed;
+            top: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10000;
+            color: #fff;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+        .fixed-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        #fullscreen-btn { left: 12px; }
+        #settings-btn { left: 56px; }
+        #coord-btn { left: 100px; display: none; }
+        #answer-btn { right: 100px; display: none; }
+        #help-btn { right: 56px; }
+        #lock-btn { right: 12px; }
+
+        /* 顶部信息区 */
+        .top-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; 
+            width: 100%;
+            padding-top: 8px;
+            transition: all 0.3s;
+        }
+
+        .game-title {
+            display: flex;
+            gap: 8px;
+            margin: 5px 0 10px;
+        }
+
+        .title-char {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: clamp(28px, 4.5vh, 42px);
+            height: clamp(28px, 4.5vh, 42px);
+            background-color: #ffffff;
+            border-radius: 6px;
+            font-size: clamp(18px, 3vh, 28px);
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .title-char:nth-child(1) { color: #E74C3C; }
+        .title-char:nth-child(2) { color: #F1C40F; }
+        .title-char:nth-child(3) { color: #3498DB; }
+        .title-char:nth-child(4) { color: #2ECC71; }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            padding: 8px 24px;
+            font-size: clamp(14px, 2vh, 18px);
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-start {
+            color: var(--bg-color);
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
+        }
+
+        .btn-custom {
+            color: var(--bg-color);
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            box-shadow: 0 4px 10px rgba(96, 165, 250, 0.3);
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-size: clamp(14px, 2vh, 20px);
+            font-weight: bold;
+            font-family: monospace;
+            margin-bottom: 8px;
+            min-width: 320px;
+        }
+
+        .timer { color: #93c5fd; }
+        .level-id { color: #fca5a5; }
+        .play-mode-display {
+            color: #a78bfa;
+            padding: 0 10px;
+            border-left: 1px solid #475569;
+            border-right: 1px solid #475569;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: clamp(16px, 2.5vh, 22px);
+            font-weight: bold;
+            background: rgba(19, 23, 36, 0.8);
+            padding: 8px 30px;
+            border-radius: 10px;
+            border: 1px solid var(--block-border);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .header span {
+            font-family: monospace;
+            font-size: clamp(18px, 3vh, 26px);
+            margin-left: 5px;
+        }
+
+        .text-found { color: var(--text-found); }
+        .text-remaining { color: var(--text-remaining); }
+        .text-mistake { color: var(--text-mistake); }
+
+        body.practice-mode .mistake-container { display: none; }
+
+        /* --- 全屏模式精简UI --- */
+        body.is-fullscreen .top-ui { padding-top: 2px; }
+        body.is-fullscreen .game-title,
+        body.is-fullscreen .controls { display: none; }
+        body.is-fullscreen .info-bar { font-size: 12px; gap: 10px; margin-bottom: 2px; margin-top: 2px; }
+        body.is-fullscreen .header { font-size: 14px; gap: 15px; padding: 2px 20px; margin-bottom: 2px; }
+        body.is-fullscreen .header span { font-size: 16px; }
+        body.is-fullscreen .game-container { padding: 2px; gap: 1vmin; }
+
+        /* =========================================================
+           盘面主体区
+           ========================================================= */
+        .game-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            width: 100%;
+            min-height: 0; 
+            overflow: auto; 
+            gap: 2vw; 
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        /* 魔方模式 Canvas 包装 */
+        .cube-board-wrapper {
+            display: flex;
+            aspect-ratio: 1 / 1; 
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        /* 坐标轴网格布局 */
+        .cube-inner-wrapper {
+            display: grid;
+            grid-template-columns: 24px auto; 
+            grid-template-rows: 24px auto;
+            justify-content: center;
+            align-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .axis-corner { grid-area: 1 / 1; background: transparent; }
+        .axis-top { grid-area: 1 / 2; position: relative; }
+        .axis-left { grid-area: 2 / 1; position: relative; }
+
+        /* 核心画布，严格无内边距边框 */
+        .main-canvas {
+            grid-area: 2 / 2;
+            display: block;
+            background: #000; 
+            border: none;
+            padding: 0;
+            margin: 0;
+            cursor: grab;
+        }
+        .main-canvas:active { cursor: grabbing; }
+
+        .axis-canvas {
+            position: absolute;
+            top: 0; left: 0;
+        }
+
+        /* =========================================================
+           响应式布局
+           ========================================================= */
+        @media (orientation: landscape) {
+            body .game-container {
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 3vw;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+            body .cube-board-wrapper {
+                height: 98%;
+                width: auto;
+                max-height: 100%;
+                flex-shrink: 0;
+                aspect-ratio: 1 / 1;
+            }
+        }
+
+        @media (orientation: portrait) {
+            /* 全屏模式下 */
+            body.is-fullscreen .game-container {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 1vh;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+            body.is-fullscreen .cube-board-wrapper {
+                width: 96%;
+                max-height: 49.5%;
+                aspect-ratio: 1 / 1;
+                flex-shrink: 1;
+                margin: 0 auto;
+            }
+
+            /* 非全屏模式下 */
+            body:not(.is-fullscreen) .game-container {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 1vh;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+            body:not(.is-fullscreen) .cube-board-wrapper {
+                width: 96%;
+                max-height: 49.5%;
+                aspect-ratio: 1 / 1;
+                flex-shrink: 1;
+                margin: 0 auto;
+            }
+        }
+
+        /* =========================================================
+           弹窗与提示
+           ========================================================= */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-overlay.hidden { display: none; }
+
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 25px 30px;
+            border-radius: 12px;
+            color: #e2e8f0;
+            width: 400px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .modal-content h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group label { font-size: 16px; color: #cbd5e1; }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 120px;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background: #0f172a;
+            color: #fff;
+            outline: none;
+            text-align: center;
+        }
+
+        .form-group input:focus { border-color: #3b82f6; }
+
+        .switch-container { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        
+        .mode-text {
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            color: #64748b;
+            cursor: pointer;
+        }
+        .mode-text.active-enlarge { background-color: rgba(74, 222, 128, 0.2); color: #4ade80; font-weight: bold; }
+        .mode-text.active-mini { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; font-weight: bold; }
+
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #3b82f6; 
+            transition: .4s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px;
+            left: 3px; bottom: 3px; background-color: white;
+            transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4ade80; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .modal-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
+        .btn-confirm, .btn-cancel {
+            padding: 8px 24px; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 15px; font-weight: bold;
+        }
+        .btn-confirm { background: #3b82f6; color: #fff; }
+        .btn-cancel { background: #475569; color: #fff; }
+
+        .rules-text { line-height: 1.6; font-size: 15px; color: #cbd5e1; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+        .rules-text ul { padding-left: 20px; margin-top: 10px; }
+        .rules-text li { margin-bottom: 8px; }
+        .rules-text strong { color: #fcd34d; }
+
+        .toast-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10001; pointer-events: none;
+        }
+        .toast-overlay.hidden { display: none; }
+        .toast-content {
+            background: rgba(15, 23, 42, 0.95); color: #fff; padding: 20px 30px;
+            border-radius: 12px; font-size: clamp(16px, 3vh, 24px); font-weight: bold;
+            text-align: center; border: 2px solid var(--success-glow);
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.3); pointer-events: auto; line-height: 1.5;
+        }
+    </style>
+</head>
+<body class="cube-mode">
+
+    <div class="fixed-btn" id="fullscreen-btn" title="全屏">⛶</div>
+    <div class="fixed-btn" id="settings-btn" title="设置">⚙</div>
+    <div class="fixed-btn" id="coord-btn" title="查看坐标">📍</div>
+    <div class="fixed-btn" id="answer-btn" title="查看答案">💡</div>
+    <div class="fixed-btn" id="help-btn" title="帮助">?</div>
+    <div class="fixed-btn" id="lock-btn" title="锁定界面">🔓</div>
+
+    <!-- 设置面板 -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>⚙️ 游戏设置</h3>
+            <div class="form-group">
+                <label id="label-size">盘面大小 (5-100)</label>
+                <input type="number" id="set-size" min="5" max="100" value="10">
+            </div>
+            <div class="form-group">
+                <label>差异块数 (数量或%)</label>
+                <input type="text" id="set-diff" value="1">
+            </div>
+            <div class="form-group">
+                <label>颜色种数 (4-16)</label>
+                <input type="number" id="set-color-count" min="4" max="16" value="8">
+            </div>
+            <div class="form-group" style="justify-content: center;">
+                <div class="switch-container">
+                    <span id="text-challenge" class="mode-text active-mini">挑战模式</span>
+                    <label class="switch">
+                        <input type="checkbox" id="set-practice">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="text-practice" class="mode-text">练习模式</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="settings-cancel" class="btn-cancel">取消</button>
+                <button id="settings-confirm" class="btn-confirm">应用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 坐标面板 -->
+    <div id="coord-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="width: 300px;">
+            <h3>📍 已选坐标</h3>
+            <div id="coord-list" style="text-align: center; font-size: 18px; line-height: 1.8; max-height: 50vh; overflow-y: auto; word-break: break-all; font-family: monospace;">
+                暂无选中
+            </div>
+            <div class="modal-buttons">
+                <button id="coord-close" class="btn-confirm" style="width: 100%;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助面板 -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>📖 游戏规则与说明</h3>
+            <div class="rules-text" id="help-content">
+                <p><strong>游戏目标：</strong>在左右两面魔方墙中，找出隐藏的不同颜色的格子。</p>
+                <p><strong>盘面说明：</strong>左右两面墙在相同位置本应完全一致，但其中部分格子的颜色被替换了，请找出它们。</p>
+                <p><strong>操作指南：</strong></p>
+                <ul>
+                    <li><strong>寻找不同：</strong>直接点击左右任意一面墙上的不同处（点击左墙或右墙均有效）。</li>
+                    <li><strong>全屏：</strong>点击左上角图标可切换全屏，全屏模式下支持<strong>双指捏合缩放、单指拖动</strong>来观察细节。</li>
+                    <li><strong>坐标查询：</strong>练习模式下，点击左上角坐标图标（📍）可查看已选格子的精确坐标（先行后列，如(5,6)）。</li>
+                    <li><strong>设置：</strong>点击左上角齿轮图标调整盘面大小、颜色种类及挑战/练习模式。</li>
+                    <li><strong>帮助：</strong>点击右上角问号图标查看本规则。</li>
+                    <li><strong>锁定：</strong>点击右上角锁图标可锁定屏幕，防止误触（锁定后无法缩放和滑动）。</li>
+                    <li><strong>查看答案：</strong>练习模式下，右上角会显示灯泡图标，点击可将所有不同处标黑。</li>
+                </ul>
+            </div>
+            <div class="modal-buttons">
+                <button id="help-close" class="btn-confirm" style="width: 100%;">我知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 题号输入框 -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>请输入题号</h3>
+            <div class="form-group" style="justify-content: center;">
+                <input type="text" id="custom-id-input" maxlength="6" placeholder="1-6位字母数字" style="width: 100%;">
+            </div>
+            <div class="modal-buttons">
+                <button id="modal-cancel" class="btn-cancel">取消</button>
+                <button id="modal-confirm" class="btn-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义通用确认弹窗 -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="confirm-text">提示</h3>
+            <div class="modal-buttons">
+                <button id="confirm-cancel" class="btn-cancel">取消</button>
+                <button id="confirm-ok" class="btn-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-overlay" class="toast-overlay hidden">
+        <div class="toast-content" id="toast-text"></div>
+    </div>
+
+    <div class="top-ui">
+        <h1 class="game-title" id="main-title">
+            <span class="title-char">魔</span>
+            <span class="title-char">方</span>
+            <span class="title-char">找</span>
+            <span class="title-char">茬</span>
+        </h1>
+        <div class="controls">
+            <button class="btn btn-start" id="start-btn">开始游戏</button>
+            <button class="btn btn-custom" id="custom-btn">指定编号</button>
+        </div>
+        <div class="info-bar">
+            <div class="timer">计时: <span id="timer-display">00:00</span></div>
+            <div class="play-mode-display" id="play-mode-display">挑战模式</div>
+            <div class="level-id">题号: <span id="level-id-display">------</span></div>
+        </div>
+        <div class="header">
+            <div><span id="label-found">找到</span> <span id="found-count" class="text-found">0</span></div>
+            <div><span id="label-remaining">剩余</span> <span id="remaining-count" class="text-remaining">0</span></div>
+            <div class="mistake-container">失误 <span id="mistake-count" class="text-mistake">0</span></div>
+        </div>
+    </div>
+
+    <div class="game-container" id="game-container">
+        <div class="cube-board-wrapper" id="cube-left-wrapper">
+            <div class="cube-inner-wrapper">
+                <div class="axis-corner"></div>
+                <div class="axis-top"><canvas id="axis-top-left" class="axis-canvas"></canvas></div>
+                <div class="axis-left"><canvas id="axis-left-left" class="axis-canvas"></canvas></div>
+                <canvas id="canvas-left" class="main-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="cube-board-wrapper" id="cube-right-wrapper">
+            <div class="cube-inner-wrapper">
+                <div class="axis-corner"></div>
+                <div class="axis-top"><canvas id="axis-top-right" class="axis-canvas"></canvas></div>
+                <div class="axis-left"><canvas id="axis-left-right" class="axis-canvas"></canvas></div>
+                <canvas id="canvas-right" class="main-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ALL_COLORS = [
+            '#E74C3C', '#2ECC71', '#3498DB', '#F1C40F', '#00FFFF', '#FF00FF', 
+            '#FF8C00', '#9B59B6', '#808080', '#8B4513', '#8B0000', '#006400', 
+            '#00008B', '#FFB6C1', '#008080', '#BDB76B'
+        ];
+        
+        let settingsCube = { size: 10, diffInput: '1', colorCount: 8, isPractice: false };
+        
+        let state = {
+            rows: 10, cols: 10, diffCount: 12,
+            grid: [], found: 0, remaining: 0, mistakes: 0, isPlaying: false,
+            isPractice: false, 
+            selectedIds: [], 
+            isShowingAnswer: false,
+            hasActiveGame: false,
+            zoom: 1,
+            panX: 0,
+            panY: 0
+        };
+
+        let timerInterval, secondsElapsed = 0, minutesElapsed = 0;
+        let toastTimeout, toastDismissHandler = null;
+        let isLocked = false;
+        let rng = Math.random;
+        let confirmAction = null;
+
+        const canvasLeft = document.getElementById('canvas-left');
+        const canvasRight = document.getElementById('canvas-right');
+        const axisTopLeft = document.getElementById('axis-top-left');
+        const axisTopRight = document.getElementById('axis-top-right');
+        const axisLeftLeft = document.getElementById('axis-left-left');
+        const axisLeftRight = document.getElementById('axis-left-right');
+
+        const ctxLeft = canvasLeft.getContext('2d');
+        const ctxRight = canvasRight.getContext('2d');
+        const ctxAxisTopLeft = axisTopLeft.getContext('2d');
+        const ctxAxisTopRight = axisTopRight.getContext('2d');
+        const ctxAxisLeftLeft = axisLeftLeft.getContext('2d');
+        const ctxAxisLeftRight = axisLeftRight.getContext('2d');
+
+        let cellSize = 0;
+
+        function xmur3(str) {
+            for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++) {
+                h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+                h = h << 13 | h >>> 19;
+            }
+            return function() {
+                h = Math.imul(h ^ (h >>> 16), 2246822507);
+                h = Math.imul(h ^ (h >>> 13), 3266489909);
+                return (h ^= h >>> 16) >>> 0;
+            }
+        }
+
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        const foundEl = document.getElementById('found-count');
+        const remainingEl = document.getElementById('remaining-count');
+        const mistakeEl = document.getElementById('mistake-count');
+        const labelFound = document.getElementById('label-found');
+        const labelRemaining = document.getElementById('label-remaining');
+        const startBtn = document.getElementById('start-btn');
+        const customBtn = document.getElementById('custom-btn');
+        const timerDisplay = document.getElementById('timer-display');
+        const levelIdDisplay = document.getElementById('level-id-display');
+        const answerBtn = document.getElementById('answer-btn');
+        const playModeDisplay = document.getElementById('play-mode-display');
+        
+        const settingsModal = document.getElementById('settings-modal');
+        const setSizeInput = document.getElementById('set-size');
+        const setDiffInput = document.getElementById('set-diff');
+        const setColorCountInput = document.getElementById('set-color-count');
+        const setPracticeInput = document.getElementById('set-practice');
+        const settingsConfirm = document.getElementById('settings-confirm');
+        const settingsCancel = document.getElementById('settings-cancel');
+        
+        const coordModal = document.getElementById('coord-modal');
+        const coordList = document.getElementById('coord-list');
+        const coordBtn = document.getElementById('coord-btn');
+        const coordClose = document.getElementById('coord-close');
+
+        const helpModal = document.getElementById('help-modal');
+        const helpBtn = document.getElementById('help-btn');
+        const helpClose = document.getElementById('help-close');
+
+        const modalOverlay = document.getElementById('modal-overlay');
+        const customIdInput = document.getElementById('custom-id-input');
+        const modalConfirm = document.getElementById('modal-confirm');
+        const modalCancel = document.getElementById('modal-cancel');
+
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmText = document.getElementById('confirm-text');
+        const confirmOk = document.getElementById('confirm-ok');
+        const confirmCancel = document.getElementById('confirm-cancel');
+        
+        const toastOverlay = document.getElementById('toast-overlay');
+        const toastText = document.getElementById('toast-text');
+
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const lockBtn = document.getElementById('lock-btn');
+        const metaViewport = document.querySelector('meta[name="viewport"]');
+
+        const textChallenge = document.getElementById('text-challenge');
+        const textPractice = document.getElementById('text-practice');
+
+        function updatePlayModeText() {
+            if (setPracticeInput.checked) {
+                textChallenge.classList.remove('active-mini');
+                textPractice.classList.add('active-enlarge');
+            } else {
+                textPractice.classList.remove('active-enlarge');
+                textChallenge.classList.add('active-mini');
+            }
+        }
+
+        setPracticeInput.addEventListener('change', updatePlayModeText);
+        textChallenge.addEventListener('click', () => { setPracticeInput.checked = false; updatePlayModeText(); });
+        textPractice.addEventListener('click', () => { setPracticeInput.checked = true; updatePlayModeText(); });
+
+        function updateTopModeDisplay() {
+            playModeDisplay.textContent = settingsCube.isPractice ? '练习模式' : '挑战模式';
+        }
+
+        function resizeCanvas() {
+            const wrapperLeft = document.getElementById('cube-left-wrapper');
+            const wrapperRight = document.getElementById('cube-right-wrapper');
+            
+            const wLeft = wrapperLeft.clientWidth;
+            const hLeft = wrapperLeft.clientHeight;
+            const wRight = wrapperRight.clientWidth;
+            const hRight = wrapperRight.clientHeight;
+            
+            const maxSizeLeft = Math.floor(Math.min(wLeft - 24, hLeft - 24));
+            const maxSizeRight = Math.floor(Math.min(wRight - 24, hRight - 24));
+            
+            if (maxSizeLeft <= 0 || maxSizeRight <= 0) return;
+
+            cellSize = Math.max(1, Math.floor(Math.min(maxSizeLeft, maxSizeRight) / settingsCube.size));
+            const gridSize = cellSize * settingsCube.size;
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvasLeft.style.width = gridSize + 'px';
+            canvasLeft.style.height = gridSize + 'px';
+            canvasLeft.width = Math.floor(gridSize * dpr);
+            canvasLeft.height = Math.floor(gridSize * dpr);
+            
+            canvasRight.style.width = gridSize + 'px';
+            canvasRight.style.height = gridSize + 'px';
+            canvasRight.width = Math.floor(gridSize * dpr);
+            canvasRight.height = Math.floor(gridSize * dpr);
+            
+            const axisSize = 24;
+            axisTopLeft.style.width = gridSize + 'px';
+            axisTopLeft.style.height = axisSize + 'px';
+            axisTopLeft.width = Math.floor(gridSize * dpr);
+            axisTopLeft.height = Math.floor(axisSize * dpr);
+            
+            axisTopRight.style.width = gridSize + 'px';
+            axisTopRight.style.height = axisSize + 'px';
+            axisTopRight.width = Math.floor(gridSize * dpr);
+            axisTopRight.height = Math.floor(axisSize * dpr);
+            
+            axisLeftLeft.style.width = axisSize + 'px';
+            axisLeftLeft.style.height = gridSize + 'px';
+            axisLeftLeft.width = Math.floor(axisSize * dpr);
+            axisLeftLeft.height = Math.floor(gridSize * dpr);
+            
+            axisLeftRight.style.width = axisSize + 'px';
+            axisLeftRight.style.height = gridSize + 'px';
+            axisLeftRight.width = Math.floor(axisSize * dpr);
+            axisLeftRight.height = Math.floor(gridSize * dpr);
+
+            applyPanLimits();
+            drawCubeBoard();
+            drawAxes();
+        }
+
+        function drawAxes() {
+            const cols = settingsCube.size;
+            const dpr = window.devicePixelRatio || 1;
+
+            ctxAxisTopLeft.clearRect(0, 0, axisTopLeft.width, axisTopLeft.height);
+            ctxAxisTopRight.clearRect(0, 0, axisTopRight.width, axisTopRight.height);
+            ctxAxisLeftLeft.clearRect(0, 0, axisLeftLeft.width, axisLeftLeft.height);
+            ctxAxisLeftRight.clearRect(0, 0, axisLeftRight.width, axisLeftRight.height);
+
+            const fontSize = Math.max(10, Math.min(16, cellSize * 0.6));
+            
+            const effectiveCellSize = cellSize * state.zoom;
+            const isCompact = effectiveCellSize < 18; 
+
+            ctxAxisTopLeft.font = `${fontSize * dpr}px monospace`;
+            ctxAxisTopLeft.fillStyle = '#cbd5e1';
+            ctxAxisTopLeft.textAlign = 'left';
+            ctxAxisTopLeft.textBaseline = 'middle';
+
+            ctxAxisTopRight.font = ctxAxisTopLeft.font;
+            ctxAxisTopRight.fillStyle = ctxAxisTopLeft.fillStyle;
+            ctxAxisTopRight.textAlign = ctxAxisTopLeft.textAlign;
+            ctxAxisTopRight.textBaseline = ctxAxisTopLeft.textBaseline;
+
+            for (let i = 0; i < cols; i++) {
+                const baseX = i * cellSize * dpr + (cellSize * dpr) / 2;
+                const centerX = baseX * state.zoom + state.panX * dpr;
+                const val = i + 1;
+                const text = String(val);
+                const textWidth = ctxAxisTopLeft.measureText(text).width;
+                
+                let drawX = centerX - textWidth / 2;
+                
+                if (centerX < -textWidth || centerX > axisTopLeft.width + textWidth) continue;
+
+                if (val === cols && drawX + textWidth > axisTopLeft.width) {
+                    drawX = axisTopLeft.width - textWidth - 2 * dpr;
+                }
+                if (val === 1 && drawX < 0) {
+                    drawX = 2 * dpr;
+                }
+
+                if (!isCompact) {
+                    ctxAxisTopLeft.fillText(text, drawX, axisTopLeft.height / 2);
+                    ctxAxisTopRight.fillText(text, drawX, axisTopRight.height / 2);
+                } else {
+                    if (val % 10 === 0 || val === cols) {
+                        ctxAxisTopLeft.fillText(text, drawX, axisTopLeft.height / 2);
+                        ctxAxisTopRight.fillText(text, drawX, axisTopRight.height / 2);
+                    } else {
+                        ctxAxisTopLeft.beginPath();
+                        ctxAxisTopLeft.moveTo(centerX, axisTopLeft.height - 4 * dpr);
+                        ctxAxisTopLeft.lineTo(centerX, axisTopLeft.height);
+                        ctxAxisTopLeft.strokeStyle = '#64748b';
+                        ctxAxisTopLeft.lineWidth = 1 * dpr;
+                        ctxAxisTopLeft.stroke();
+                        
+                        ctxAxisTopRight.beginPath();
+                        ctxAxisTopRight.moveTo(centerX, axisTopRight.height - 4 * dpr);
+                        ctxAxisTopRight.lineTo(centerX, axisTopRight.height);
+                        ctxAxisTopRight.strokeStyle = '#64748b';
+                        ctxAxisTopRight.lineWidth = 1 * dpr;
+                        ctxAxisTopRight.stroke();
+                    }
+                }
+            }
+
+            ctxAxisLeftLeft.font = `${fontSize * dpr}px monospace`;
+            ctxAxisLeftLeft.fillStyle = '#cbd5e1';
+            ctxAxisLeftLeft.textAlign = 'center';
+            ctxAxisLeftLeft.textBaseline = 'middle';
+
+            ctxAxisLeftRight.font = ctxAxisLeftLeft.font;
+            ctxAxisLeftRight.fillStyle = ctxAxisLeftLeft.fillStyle;
+            ctxAxisLeftRight.textAlign = ctxAxisLeftLeft.textAlign;
+            ctxAxisLeftRight.textBaseline = ctxAxisLeftLeft.textBaseline;
+
+            for (let i = 0; i < cols; i++) {
+                const baseY = i * cellSize * dpr + (cellSize * dpr) / 2;
+                const centerY = baseY * state.zoom + state.panY * dpr;
+                const val = i + 1;
+                const text = String(val);
+                const textHeight = fontSize * dpr;
+
+                if (centerY < -textHeight || centerY > axisLeftLeft.height + textHeight) continue;
+
+                let drawY = centerY;
+                
+                if (val === cols && drawY + textHeight / 2 > axisLeftLeft.height) {
+                    drawY = axisLeftLeft.height - textHeight / 2 - 2 * dpr;
+                }
+                if (val === 1 && drawY - textHeight / 2 < 0) {
+                    drawY = textHeight / 2 + 2 * dpr;
+                }
+
+                if (!isCompact) {
+                    ctxAxisLeftLeft.fillText(text, axisLeftLeft.width / 2, drawY);
+                    ctxAxisLeftRight.fillText(text, axisLeftRight.width / 2, drawY);
+                } else {
+                    if (val % 10 === 0 || val === cols) {
+                        ctxAxisLeftLeft.fillText(text, axisLeftLeft.width / 2, drawY);
+                        ctxAxisLeftRight.fillText(text, axisLeftRight.width / 2, drawY);
+                    } else {
+                        ctxAxisLeftLeft.beginPath();
+                        ctxAxisLeftLeft.moveTo(axisLeftLeft.width - 4 * dpr, centerY);
+                        ctxAxisLeftLeft.lineTo(axisLeftLeft.width, centerY);
+                        ctxAxisLeftLeft.strokeStyle = '#64748b';
+                        ctxAxisLeftLeft.lineWidth = 1 * dpr;
+                        ctxAxisLeftLeft.stroke();
+                        
+                        ctxAxisLeftRight.beginPath();
+                        ctxAxisLeftRight.moveTo(axisLeftRight.width - 4 * dpr, centerY);
+                        ctxAxisLeftRight.lineTo(axisLeftRight.width, centerY);
+                        ctxAxisLeftRight.strokeStyle = '#64748b';
+                        ctxAxisLeftRight.lineWidth = 1 * dpr;
+                        ctxAxisLeftRight.stroke();
+                    }
+                }
+            }
+        }
+
+        function drawCubeBoard() {
+            const physicalW = canvasLeft.width;
+            const physicalH = canvasLeft.height;
+            const dpr = window.devicePixelRatio || 1;
+            
+            ctxLeft.setTransform(1, 0, 0, 1, 0, 0);
+            ctxRight.setTransform(1, 0, 0, 1, 0, 0);
+            
+            ctxLeft.fillStyle = '#000000';
+            ctxLeft.fillRect(0, 0, physicalW, physicalH);
+            ctxRight.fillStyle = '#000000';
+            ctxRight.fillRect(0, 0, physicalW, physicalH);
+
+            ctxLeft.save();
+            ctxLeft.translate(state.panX * dpr, state.panY * dpr);
+            ctxLeft.scale(state.zoom, state.zoom);
+            
+            ctxRight.save();
+            ctxRight.translate(state.panX * dpr, state.panY * dpr);
+            ctxRight.scale(state.zoom, state.zoom);
+
+            const cols = settingsCube.size;
+            const pCell = cellSize * dpr;
+            
+            const lineWidth = cellSize > 3 ? Math.max(1, Math.floor(1 * dpr)) : 0;
+
+            for (let i = 0; i < state.grid.length; i++) {
+                const b = state.grid[i];
+                const row = Math.floor(i / cols);
+                const col = i % cols;
+                
+                const px = col * pCell;
+                const py = row * pCell;
+                
+                const fillW = pCell - lineWidth;
+                const fillH = pCell - lineWidth;
+
+                let fillColorLeft = b.left.color;
+                let fillColorRight = b.right.color;
+                
+                if (state.isShowingAnswer) {
+                    if (b.isDifferent) {
+                        fillColorLeft = '#000000';
+                        fillColorRight = '#000000';
+                    }
+                } else if (state.selectedIds.includes(b.id)) {
+                    fillColorLeft = '#FFFFFF';
+                    fillColorRight = '#FFFFFF';
+                }
+
+                if (fillColorLeft) {
+                    ctxLeft.fillStyle = fillColorLeft;
+                    ctxLeft.fillRect(px, py, fillW, fillH);
+                }
+
+                if (fillColorRight) {
+                    ctxRight.fillStyle = fillColorRight;
+                    ctxRight.fillRect(px, py, fillW, fillH);
+                }
+                
+                if (!state.isShowingAnswer) {
+                    if (cellSize > 6 && (b.found || state.selectedIds.includes(b.id))) {
+                        let strokeColor = '';
+                        if (b.found) strokeColor = '#4ade80';
+                        else if (state.selectedIds.includes(b.id)) strokeColor = '#facc15';
+                        
+                        ctxLeft.strokeStyle = strokeColor;
+                        ctxLeft.lineWidth = 2 * dpr;
+                        ctxLeft.strokeRect(px + 1 * dpr, py + 1 * dpr, fillW - 2 * dpr, fillH - 2 * dpr);
+                        
+                        ctxRight.strokeStyle = strokeColor;
+                        ctxRight.lineWidth = 2 * dpr;
+                        ctxRight.strokeRect(px + 1 * dpr, py + 1 * dpr, fillW - 2 * dpr, fillH - 2 * dpr);
+                    }
+                }
+            }
+            
+            ctxLeft.restore();
+            ctxRight.restore();
+        }
+
+        function applyPanLimits() {
+            if (state.zoom <= 1) {
+                state.panX = 0;
+                state.panY = 0;
+                return;
+            }
+            const baseSize = cellSize * settingsCube.size;
+            const scaledSize = baseSize * state.zoom;
+            
+            const minPanX = baseSize - scaledSize;
+            const minPanY = baseSize - scaledSize;
+            
+            if (state.panX > 0) state.panX = 0;
+            if (state.panX < minPanX) state.panX = minPanX;
+            
+            if (state.panY > 0) state.panY = 0;
+            if (state.panY < minPanY) state.panY = minPanY;
+        }
+
+        let hasDragged = false;
+
+        canvasLeft.addEventListener('click', (e) => {
+            if (hasDragged) { hasDragged = false; return; }
+            
+            const realX = (e.offsetX - state.panX) / state.zoom;
+            const realY = (e.offsetY - state.panY) / state.zoom;
+            const col = Math.floor(realX / cellSize);
+            const row = Math.floor(realY / cellSize);
+            const id = row * settingsCube.size + col;
+            if (id >= 0 && id < state.grid.length && col >= 0 && col < settingsCube.size && row >= 0 && row < settingsCube.size) {
+                handleBlockClick(state.grid[id], 'left', null);
+            }
+        });
+
+        canvasRight.addEventListener('click', (e) => {
+            if (hasDragged) { hasDragged = false; return; }
+            
+            const realX = (e.offsetX - state.panX) / state.zoom;
+            const realY = (e.offsetY - state.panY) / state.zoom;
+            const col = Math.floor(realX / cellSize);
+            const row = Math.floor(realY / cellSize);
+            const id = row * settingsCube.size + col;
+            if (id >= 0 && id < state.grid.length && col >= 0 && col < settingsCube.size && row >= 0 && row < settingsCube.size) {
+                handleBlockClick(state.grid[id], 'right', null);
+            }
+        });
+
+        const resizeObserver = new ResizeObserver(() => {
+            resizeCanvas();
+        });
+        resizeObserver.observe(document.getElementById('game-container'));
+
+        // ==========================================
+        // 手势操作
+        // ==========================================
+        const gameContainer = document.getElementById('game-container');
+        let interactionMode = null; 
+        
+        let initialPinchDistance = 0;
+        let initialZoom = 1;
+        let startPanX = 0;
+        let startPanY = 0;
+        let startCenterX = 0;
+        let startCenterY = 0;
+        
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        gameContainer.addEventListener('touchstart', (e) => {
+            if (isLocked) return;
+            
+            if (e.touches.length === 1) {
+                if (state.zoom > 1) {
+                    interactionMode = 'pan';
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+                    startPanX = state.panX;
+                    startPanY = state.panY;
+                    hasDragged = false;
+                }
+            } else if (e.touches.length === 2) {
+                if (e.cancelable) e.preventDefault();
+                interactionMode = 'pinch';
+                hasDragged = true; 
+                
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                initialPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                initialZoom = state.zoom;
+                startCenterX = (t1.clientX + t2.clientX) / 2;
+                startCenterY = (t1.clientY + t2.clientY) / 2;
+                startPanX = state.panX;
+                startPanY = state.panY;
+            }
+        }, { passive: false });
+
+        gameContainer.addEventListener('touchmove', (e) => {
+            if (isLocked) return;
+            
+            if (interactionMode === 'pan' && e.touches.length === 1) {
+                const touch = e.touches[0];
+                const dx = touch.clientX - dragStartX;
+                const dy = touch.clientY - dragStartY;
+                
+                if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                    hasDragged = true;
+                    if (e.cancelable) e.preventDefault(); 
+                }
+                
+                if (hasDragged && state.zoom > 1) {
+                    state.panX = startPanX + dx;
+                    state.panY = startPanY + dy;
+                    applyPanLimits();
+                    drawCubeBoard();
+                    drawAxes();
+                }
+            } else if (interactionMode === 'pinch' && e.touches.length === 2) {
+                if (e.cancelable) e.preventDefault();
+                
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const distance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                
+                if (initialPinchDistance > 0) {
+                    let newZoom = initialZoom * (distance / initialPinchDistance);
+                    newZoom = Math.max(1, Math.min(20, newZoom));
+                    
+                    const newCenterX = (t1.clientX + t2.clientX) / 2;
+                    const newCenterY = (t1.clientY + t2.clientY) / 2;
+                    
+                    const deltaX = newCenterX - startCenterX;
+                    const deltaY = newCenterY - startCenterY;
+                    
+                    const canvasRect = canvasLeft.getBoundingClientRect();
+                    const centerXInCanvas = startCenterX - canvasRect.left;
+                    const centerYInCanvas = startCenterY - canvasRect.top;
+                    
+                    let newPanX = centerXInCanvas - (centerXInCanvas - startPanX) * (newZoom / initialZoom) + deltaX;
+                    let newPanY = centerYInCanvas - (centerYInCanvas - startPanY) * (newZoom / initialZoom) + deltaY;
+                    
+                    state.zoom = newZoom;
+                    state.panX = newPanX;
+                    state.panY = newPanY;
+                    applyPanLimits();
+                    drawCubeBoard();
+                    drawAxes();
+                }
+            }
+        }, { passive: false });
+
+        gameContainer.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2 && interactionMode === 'pinch') {
+                interactionMode = null;
+                initialPinchDistance = 0;
+                if (state.zoom < 1.05) {
+                    state.zoom = 1;
+                    state.panX = 0;
+                    state.panY = 0;
+                    drawCubeBoard();
+                    drawAxes();
+                }
+            } else if (e.touches.length === 0 && interactionMode === 'pan') {
+                interactionMode = null;
+            }
+        });
+
+        gameContainer.addEventListener('mousedown', (e) => {
+            if (isLocked || e.button !== 0) return;
+            if (state.zoom > 1) {
+                interactionMode = 'pan';
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                startPanX = state.panX;
+                startPanY = state.panY;
+                hasDragged = false;
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (interactionMode !== 'pan') return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasDragged = true;
+            
+            if (hasDragged && state.zoom > 1) {
+                state.panX = startPanX + dx;
+                state.panY = startPanY + dy;
+                applyPanLimits();
+                drawCubeBoard();
+                drawAxes();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (interactionMode === 'pan') interactionMode = null;
+        });
+
+        gameContainer.addEventListener('wheel', (e) => {
+            if (isLocked) return;
+            e.preventDefault();
+            
+            let newZoom = state.zoom - e.deltaY * 0.002;
+            newZoom = Math.max(1, Math.min(20, newZoom));
+            
+            if (newZoom === 1) {
+                state.zoom = 1;
+                state.panX = 0;
+                state.panY = 0;
+            } else {
+                const canvasRect = canvasLeft.getBoundingClientRect();
+                const isRight = e.clientX > canvasRect.right;
+                const refRect = isRight ? canvasRight.getBoundingClientRect() : canvasRect;
+                
+                const mouseXInCanvas = e.clientX - refRect.left;
+                const mouseYInCanvas = e.clientY - refRect.top;
+                
+                state.panX = mouseXInCanvas - (mouseXInCanvas - state.panX) * (newZoom / state.zoom);
+                state.panY = mouseYInCanvas - (mouseYInCanvas - state.panY) * (newZoom / state.zoom);
+                state.zoom = newZoom;
+                applyPanLimits();
+            }
+            drawCubeBoard();
+            drawAxes();
+        }, { passive: false });
+
+        // ==========================================
+        // 坐标显示逻辑
+        // ==========================================
+        coordBtn.addEventListener('click', () => {
+            if (state.selectedIds.length === 0) {
+                coordList.innerHTML = '暂无选中';
+            } else {
+                const cols = settingsCube.size;
+                const coords = state.selectedIds.map(id => {
+                    const row = Math.floor(id / cols) + 1;
+                    const col = (id % cols) + 1;
+                    return `(${row},${col})`;
+                });
+                coordList.innerHTML = coords.join(' ');
+            }
+            coordModal.classList.remove('hidden');
+        });
+
+        coordClose.addEventListener('click', () => coordModal.classList.add('hidden'));
+
+        // ==========================================
+        // 主渲染与重置逻辑
+        // ==========================================
+        function resetBoardToEmpty() {
+            state.isPlaying = false;
+            state.hasActiveGame = false;
+            state.isShowingAnswer = false;
+            state.selectedIds = [];
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            
+            state.found = 0;
+            state.mistakes = 0;
+            state.remaining = 0; 
+            
+            stopTimer();
+            timerDisplay.textContent = "00:00";
+            levelIdDisplay.textContent = "------";
+            startBtn.innerHTML = '开始游戏';
+            
+            updateTopModeDisplay();
+
+            if (settingsCube.isPractice) {
+                document.body.classList.add('practice-mode');
+                answerBtn.style.display = 'flex';
+                answerBtn.style.color = '#fff';
+                labelFound.textContent = "已选";
+                labelRemaining.textContent = "需选";
+                coordBtn.style.display = 'flex';
+            } else {
+                document.body.classList.remove('practice-mode');
+                answerBtn.style.display = 'none';
+                labelFound.textContent = "找到";
+                labelRemaining.textContent = "剩余";
+                coordBtn.style.display = 'none';
+            }
+            
+            state.grid = [];
+            drawCubeBoard(); 
+            drawAxes();
+            
+            updateUI();
+        }
+
+        function applySettingsToGrid() {
+            setTimeout(resizeCanvas, 50);
+        }
+
+        function generateRandomId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const length = Math.floor(Math.random() * 6) + 1;
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            minutesElapsed = 0;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                if (secondsElapsed >= 60) { minutesElapsed++; secondsElapsed = 0; }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() { clearInterval(timerInterval); }
+        function updateTimerDisplay() {
+            timerDisplay.textContent = `${minutesElapsed.toString().padStart(2, '0')}:${secondsElapsed.toString().padStart(2, '0')}`;
+        }
+
+        function showConfirm(msg, onOk) {
+            confirmText.textContent = msg;
+            confirmAction = onOk;
+            confirmModal.classList.remove('hidden');
+        }
+
+        confirmOk.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            if (confirmAction) confirmAction();
+        });
+        confirmCancel.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            confirmAction = null;
+        });
+
+        function requestStartGame(levelId = null) {
+            if (state.hasActiveGame) {
+                showConfirm('当前游戏尚未完成，是否放弃并开始新游戏？', () => {
+                    executeStartGame(levelId);
+                });
+            } else {
+                executeStartGame(levelId);
+            }
+        }
+
+        function executeStartGame(levelId) {
+            if (!levelId) levelId = generateRandomId();
+            levelIdDisplay.textContent = levelId;
+            
+            startBtn.innerHTML = '新的开始';
+            
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+
+            const modeStr = 'cube';
+            const seedStr = `${levelId}_${settingsCube.size}_${settingsCube.colorCount}_${settingsCube.diffInput}_${modeStr}`;
+            const seedFunc = xmur3(seedStr);
+            rng = mulberry32(seedFunc());
+
+            const currentColors = ALL_COLORS.slice(0, settingsCube.colorCount);
+            const total = settingsCube.size * settingsCube.size;
+            
+            let calcDiff = settingsCube.diffInput;
+            if (calcDiff.includes('%')) {
+                const percent = parseFloat(calcDiff);
+                state.diffCount = Math.max(1, Math.min(total, Math.round(total * percent / 100)));
+            } else {
+                state.diffCount = Math.max(1, Math.min(total, parseInt(calcDiff) || 1));
+            }
+
+            state.isPractice = settingsCube.isPractice;
+            state.isPlaying = true;
+            state.hasActiveGame = true;
+            state.found = 0;
+            state.remaining = state.diffCount; 
+            state.mistakes = 0;
+            state.selectedIds = [];
+            state.isShowingAnswer = false;
+            
+            updateTopModeDisplay(); 
+
+            if (state.isPractice) {
+                document.body.classList.add('practice-mode');
+                labelFound.textContent = "已选";
+                labelRemaining.textContent = "需选";
+                answerBtn.style.display = 'flex';
+                answerBtn.style.color = '#fff';
+                coordBtn.style.display = 'flex';
+            } else {
+                document.body.classList.remove('practice-mode');
+                labelFound.textContent = "找到";
+                labelRemaining.textContent = "剩余";
+                answerBtn.style.display = 'none';
+                coordBtn.style.display = 'none';
+            }
+            updateUI();
+
+            state.grid = [];
+            for (let i = 0; i < total; i++) {
+                const baseColor = currentColors[Math.floor(rng() * currentColors.length)];
+                state.grid.push({
+                    id: i,
+                    left: { color: baseColor },
+                    right: { color: baseColor },
+                    isDifferent: false,
+                    found: false
+                });
+            }
+
+            const indices = Array.from({ length: total }, (_, i) => i);
+            shuffle(indices);
+            
+            const diffIndices = indices.slice(0, state.diffCount);
+
+            diffIndices.forEach(idx => {
+                const block = state.grid[idx];
+                block.isDifferent = true;
+                
+                let newColor;
+                do { newColor = currentColors[Math.floor(rng() * currentColors.length)]; } while (newColor === block.left.color);
+                block.right.color = newColor;
+            });
+
+            resizeCanvas();
+            
+            document.getElementById('game-container').scrollTop = 0;
+            startTimer();
+        }
+
+        function handleBlockClick(blockData, side, blockEl) {
+            if (!state.isPlaying || state.isShowingAnswer) return;
+
+            if (state.isPractice) {
+                const idx = state.selectedIds.indexOf(blockData.id);
+                
+                if (idx > -1) {
+                    state.selectedIds.splice(idx, 1);
+                } else {
+                    if (state.selectedIds.length >= state.diffCount) {
+                        showToast('已选满，请取消后再选', false);
+                        return;
+                    }
+                    state.selectedIds.push(blockData.id);
+                }
+                
+                updateUI();
+                drawCubeBoard();
+                
+                if (state.selectedIds.length === state.diffCount) {
+                    let allCorrect = state.selectedIds.every(id => state.grid[id].isDifferent);
+                    if (allCorrect) {
+                        state.isPlaying = false;
+                        state.hasActiveGame = false;
+                        stopTimer();
+                        showToast(`练习成功！全部找对！<br>题号：${levelIdDisplay.textContent}<br>用时：${timerDisplay.textContent}`, true, false);
+                    }
+                }
+            } else {
+                if (blockData.isDifferent) {
+                    if (!blockData.found) {
+                        blockData.found = true;
+                        state.found++;
+                        state.remaining--;
+                        
+                        drawCubeBoard();
+                        updateUI();
+
+                        if (state.remaining === 0) {
+                            state.isPlaying = false;
+                            state.hasActiveGame = false;
+                            stopTimer();
+                            showToast(`恭喜找出了所有不同！<br>题号：${levelIdDisplay.textContent}<br>失误：${state.mistakes} 次<br>用时：${timerDisplay.textContent}`, true, false);
+                        }
+                    }
+                } else {
+                    state.mistakes++;
+                    updateUI();
+                }
+            }
+        }
+
+        function updateUI() {
+            if (state.isPractice) {
+                foundEl.textContent = state.selectedIds.length;
+                remainingEl.textContent = state.diffCount - state.selectedIds.length;
+            } else {
+                foundEl.textContent = state.found;
+                remainingEl.textContent = state.remaining;
+            }
+            mistakeEl.textContent = state.mistakes;
+        }
+        
+        function showToast(text, isSuccess = true, autoHide = true) {
+            toastText.innerHTML = text;
+            toastText.style.borderColor = isSuccess ? 'var(--success-glow)' : 'var(--text-mistake)';
+            toastText.style.boxShadow = isSuccess ? '0 0 30px rgba(74, 222, 128, 0.3)' : '0 0 30px rgba(248, 113, 113, 0.3)';
+            
+            toastOverlay.classList.remove('hidden');
+            
+            if (toastDismissHandler) document.removeEventListener('click', toastDismissHandler);
+            
+            toastDismissHandler = () => {
+                toastOverlay.classList.add('hidden');
+                document.removeEventListener('click', toastDismissHandler);
+                clearTimeout(toastTimeout);
+                toastDismissHandler = null;
+            };
+            
+            setTimeout(() => document.addEventListener('click', toastDismissHandler), 10);
+            clearTimeout(toastTimeout);
+            if (autoHide) {
+                toastTimeout = setTimeout(toastDismissHandler, 1500);
+            }
+        }
+
+        startBtn.addEventListener('click', () => requestStartGame());
+        
+        customBtn.addEventListener('click', () => {
+            if (state.hasActiveGame) {
+                showConfirm('当前游戏尚未完成，是否放弃并开始新游戏？', () => {
+                    customIdInput.value = '';
+                    modalOverlay.classList.remove('hidden');
+                    customIdInput.focus();
+                });
+            } else {
+                customIdInput.value = '';
+                modalOverlay.classList.remove('hidden');
+                customIdInput.focus();
+            }
+        });
+        
+        modalCancel.addEventListener('click', () => modalOverlay.classList.add('hidden'));
+        
+        modalConfirm.addEventListener('click', () => {
+            const val = customIdInput.value.trim();
+            if (!/^[A-Za-z0-9]{1,6}$/.test(val)) {
+                showToast('题号格式不正确<br>请输入1-6位字母和数字', false);
+                return;
+            }
+            modalOverlay.classList.add('hidden');
+            executeStartGame(val.toUpperCase());
+        });
+        
+        customIdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') modalConfirm.click();
+        });
+
+        answerBtn.addEventListener('click', () => {
+            if (!state.isPractice || !state.isPlaying) return;
+            state.isShowingAnswer = !state.isShowingAnswer;
+            drawCubeBoard();
+            answerBtn.style.color = state.isShowingAnswer ? '#facc15' : '#fff';
+        });
+
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            setSizeInput.value = settingsCube.size;
+            setDiffInput.value = settingsCube.diffInput;
+            setColorCountInput.value = settingsCube.colorCount; 
+            setPracticeInput.checked = settingsCube.isPractice;
+            updatePlayModeText();
+            settingsModal.classList.remove('hidden');
+        });
+
+        settingsCancel.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+        settingsConfirm.addEventListener('click', () => {
+            let newSize = parseInt(setSizeInput.value);
+            if (isNaN(newSize) || newSize < 5 || newSize > 100) {
+                showToast('盘面大小必须在 5-100 之间', false);
+                return;
+            }
+
+            let newDiff = setDiffInput.value.trim();
+            if (!newDiff) {
+                showToast('请输入差异块数', false);
+                return;
+            }
+
+            let newColorCount = parseInt(setColorCountInput.value);
+            if (isNaN(newColorCount) || newColorCount < 4 || newColorCount > 16) {
+                showToast('颜色种数必须在 4-16 之间', false);
+                return;
+            }
+
+            settingsCube.size = newSize;
+            settingsCube.diffInput = newDiff;
+            settingsCube.colorCount = newColorCount;
+            settingsCube.isPractice = setPracticeInput.checked;
+            
+            settingsModal.classList.add('hidden');
+            
+            state.rows = newSize;
+            state.cols = newSize;
+            
+            resetBoardToEmpty();
+        });
+
+        helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+        helpClose.addEventListener('click', () => helpModal.classList.add('hidden'));
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => showToast('全屏失败或不支持', false));
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fullscreenBtn.textContent = '🗗';
+                document.body.classList.add('is-fullscreen');
+            } else {
+                fullscreenBtn.textContent = '⛶';
+                document.body.classList.remove('is-fullscreen');
+            }
+            setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
+        });
+
+        lockBtn.addEventListener('click', () => {
+            isLocked = !isLocked;
+            lockBtn.textContent = isLocked ? '🔒' : '🔓';
+            
+            if (isLocked) {
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
+                metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');
+            } else {
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=yes');
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isLocked && e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = (new Date()).getTime();
+            if (isLocked && now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        document.addEventListener('wheel', (e) => {
+            if (isLocked && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        resetBoardToEmpty();
+    </script>
+</body>
+</html>
