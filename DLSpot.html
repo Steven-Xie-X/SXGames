@@ -147,7 +147,7 @@
             pointer-events: none;
         }
 
-        /* 目标预览框 (固定尺寸) */
+        /* 目标预览框 */
         #target-panel {
             width: 140px;
             height: 140px;
@@ -225,6 +225,62 @@
             border-radius: 4px;
             font-size: 14px;
         }
+
+        /* 模式滑动开关样式 */
+        .mode-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #2b3341;
+            padding: 6px;
+            border-radius: 8px;
+            user-select: none;
+        }
+        .mode-label {
+            font-size: 13px;
+            color: #7a8599;
+            padding: 4px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .mode-label.active {
+            color: #8bb4e8;
+            background-color: #1e293b;
+        }
+        .mode-label.challenge.active {
+            color: #82e0aa;
+            background-color: #144d34;
+        }
+        .toggle-switch {
+            width: 46px;
+            height: 24px;
+            background-color: #3b82f6;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 8px;
+        }
+        .toggle-switch.challenge-mode {
+            background-color: #10b981;
+        }
+        .toggle-knob {
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .toggle-switch.challenge-mode .toggle-knob {
+            transform: translateX(22px);
+        }
+
         .btn {
             width: 100%;
             padding: 10px;
@@ -314,6 +370,17 @@
                 <label>目标区域占比 (5%-30%)</label>
                 <input type="number" id="input-target-ratio" value="15" min="5" max="30" step="0.5">
             </div>
+            <!-- 游戏模式开关 -->
+            <div class="setting-item">
+                <label>游戏模式</label>
+                <div class="mode-switch-container">
+                    <div class="mode-label simple active" id="label-simple">简单模式</div>
+                    <div class="toggle-switch" id="mode-toggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <div class="mode-label challenge" id="label-challenge">挑战模式</div>
+                </div>
+            </div>
             <button class="btn" id="apply-settings">应用参数</button>
         </div>
 
@@ -335,9 +402,10 @@
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>指定编号：</strong>输入编号，在相同参数下生成固定的题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽移动盘面；滚轮或双指捏合缩放。</li>
-                <li><strong>大小提示：</strong>放大时，<strong>外圈黑框变红</strong>，说明大小匹配。若忘记大小，可<strong>长按屏幕 1.5 秒</strong>显示范围大小（松开消失）。若放大过度会提示缩小。</li>
+                <li><strong>大小提示：</strong>放大时，<strong>外圈黑框变红</strong>，说明大小匹配。若忘记大小，可<strong>长按屏幕 1.5 秒</strong>显示范围大小（松开消失）。</li>
                 <li><strong>验证匹配：</strong>在画面中<strong>连续双击</strong>（手机连点两次），若位置和大小达标，则判定成功。</li>
                 <li><strong>答案提示：</strong>点击右上角的 💡 可以显示目标位置（黑圈），再次点击隐藏。</li>
+                <li><strong>挑战模式：</strong>在设置中开启后，预览图的颜色将统一变为黑色（单色模式除外）。</li>
             </ul>
         </div>
 
@@ -379,7 +447,8 @@
 
             dotCount: 1200,
             colorCount: 3,
-            targetRadiusRatio: 0.15, // 默认 15%
+            targetRadiusRatio: 0.15, 
+            isChallengeMode: false,  // 默认简单模式
             
             targetRadius: 300,        
             dots: [],
@@ -432,10 +501,58 @@
         const infoColors = document.getElementById('info-colors');
         const infoRatio = document.getElementById('info-ratio');
 
+        // 模式开关相关元素
+        const labelSimple = document.getElementById('label-simple');
+        const labelChallenge = document.getElementById('label-challenge');
+        const modeToggle = document.getElementById('mode-toggle');
+
         function getActiveColors() {
             if (state.colorCount === 1) return ['#000000'];
             return CONFIG.colors.slice(0, state.colorCount);
         }
+
+        // 更新模式开关的UI
+        function updateModeSwitchUI() {
+            if (state.isChallengeMode && state.colorCount > 1) {
+                labelSimple.classList.remove('active');
+                labelChallenge.classList.add('active');
+                modeToggle.classList.add('challenge-mode');
+            } else {
+                // 如果颜色数为1，强制简单模式
+                if (state.colorCount === 1) {
+                    state.isChallengeMode = false;
+                }
+                labelChallenge.classList.remove('active');
+                labelSimple.classList.add('active');
+                modeToggle.classList.remove('challenge-mode');
+            }
+        }
+
+        // 开关交互
+        modeToggle.addEventListener('click', () => {
+            if (state.colorCount === 1) {
+                showToast('单色模式下无挑战模式', false, 1500);
+                return;
+            }
+            state.isChallengeMode = !state.isChallengeMode;
+            updateModeSwitchUI();
+        });
+
+        labelSimple.addEventListener('click', () => {
+            if (!state.isChallengeMode) return;
+            state.isChallengeMode = false;
+            updateModeSwitchUI();
+        });
+
+        labelChallenge.addEventListener('click', () => {
+            if (state.isChallengeMode) return;
+            if (state.colorCount === 1) {
+                showToast('单色模式下无挑战模式', false, 1500);
+                return;
+            }
+            state.isChallengeMode = true;
+            updateModeSwitchUI();
+        });
 
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
@@ -613,13 +730,16 @@
             pCtx.scale(fitZoom, fitZoom);
             pCtx.translate(-state.target.x, -state.target.y);
 
+            // 判断是否使用挑战模式颜色（黑色）
+            const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
+
             state.dots.forEach(dot => {
                 const dx = dot.x - state.target.x;
                 const dy = dot.y - state.target.y;
                 if (dx*dx + dy*dy < Math.pow(state.targetRadius * 1.5, 2)) {
                     pCtx.beginPath();
                     pCtx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
-                    pCtx.fillStyle = dot.color;
+                    pCtx.fillStyle = useChallengeColor ? '#000000' : dot.color;
                     pCtx.fill();
                 }
             });
@@ -664,7 +784,8 @@
                     if (dot.x >= minX && dot.x <= maxX && dot.y >= minY && dot.y <= maxY) {
                         ctx.beginPath();
                         ctx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
-                        ctx.fillStyle = dot.color;
+                        // 大图始终显示原色，方便寻找
+                        ctx.fillStyle = dot.color; 
                         ctx.fill();
                     }
                 });
@@ -770,7 +891,6 @@
             state.longPressTimer = setTimeout(() => {
                 state.longPressTriggered = true;
                 
-                // 如果当前视野的半径比目标半径还要小，说明玩家放大过度了，绿圈无法完整显示
                 const currentViewWorldRadius = state.screenRadius / state.view.zoom;
                 if (currentViewWorldRadius < state.targetRadius) {
                     showToast('放大过度，请缩小盘面', false, 1500);
@@ -778,7 +898,7 @@
                     state.showAreaHint = true;
                     draw();
                 }
-            }, 1500); // 改为 1.5 秒
+            }, 1500); 
         }
 
         function cancelPressTimer() {
@@ -948,6 +1068,8 @@
         settingsBtn.addEventListener('click', () => {
             helpModal.style.display = 'none';
             idModal.style.display = 'none';
+            // 每次打开设置时，确保开关UI与状态同步
+            updateModeSwitchUI();
             settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
         });
 
@@ -981,7 +1103,14 @@
             
             if (state.longPressTimer) clearTimeout(state.longPressTimer);
             
-            const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}`;
+            // 检查模式合法性
+            if (state.colorCount === 1) {
+                state.isChallengeMode = false;
+            }
+            updateModeSwitchUI();
+
+            // 种子
+            const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.isChallengeMode ? 'c' : 's'}`;
             const seedFunc = xmur3(seedStr);
             state.rng = mulberry32(seedFunc());
 
@@ -1000,7 +1129,7 @@
             targetPanel.style.display = 'block';
             resizeCanvas(); 
 
-            // 初始提示改为 2 秒
+            // 初始提示
             setTimeout(() => {
                 if (state.isPlaying) {
                     state.showAreaHint = false;
@@ -1052,10 +1181,16 @@
             state.dotCount = Math.max(100, Math.min(5000, state.dotCount));
             state.colorCount = Math.max(1, Math.min(CONFIG.colors.length, state.colorCount));
             
+            // 如果颜色改为1，强制取消挑战模式
+            if (state.colorCount === 1) {
+                state.isChallengeMode = false;
+            }
+
             inputDots.value = state.dotCount;
             inputColors.value = state.colorCount;
             inputTargetRatio.value = ratioVal;
 
+            updateModeSwitchUI();
             settingsModal.style.display = 'none';
 
             if (state.isPlaying) {
@@ -1072,6 +1207,7 @@
         });
 
         // 初始化
+        updateModeSwitchUI();
         resizeCanvas();
     </script>
 </body>
