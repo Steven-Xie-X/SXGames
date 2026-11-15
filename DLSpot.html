@@ -12,12 +12,12 @@
             user-select: none;
             -webkit-touch-callout: none;
         }
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* 彻底禁止滚动条 */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f0f0;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
             display: flex;
             flex-direction: column;
         }
@@ -29,13 +29,17 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 15px;
             position: relative;
             z-index: 10;
             flex-shrink: 0;
         }
+        .header-left, .header-right {
+            display: flex;
+            gap: 5px;
+        }
         .header-btn {
-            font-size: 24px;
+            font-size: 22px;
             background: none;
             border: none;
             cursor: pointer;
@@ -47,24 +51,20 @@
             justify-content: center;
             align-items: center;
             border-radius: 50%;
+            color: #555;
         }
         .header-btn:hover { background-color: #f0f0f0; }
         #settings-btn:hover { transform: rotate(45deg); }
-        #help-btn { font-weight: bold; color: #555; font-family: serif;}
+        #help-btn { font-weight: bold; font-family: serif;}
         
         #game-title {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             color: #333;
             letter-spacing: 2px;
-        }
-        
-        .header-right {
-            display: flex;
-            gap: 10px;
         }
 
         /* 操作按钮栏 */
@@ -77,6 +77,7 @@
             gap: 20px;
             z-index: 9;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex-shrink: 0;
         }
         .ctrl-btn {
             padding: 6px 16px;
@@ -105,29 +106,31 @@
             font-size: 13px;
             color: #555;
             z-index: 9;
-            flex-wrap: wrap;
+            flex-shrink: 0;
+            padding: 0 10px;
         }
         #info-bar span { font-weight: bold; color: #333; }
         #info-bar div { white-space: nowrap; }
+        .highlight-time { color: #e53935 !important; }
 
         /* 游戏主容器 */
         #game-container {
             flex: 1;
-            display: flex;
-            flex-direction: column; 
             position: relative;
             overflow: hidden;
-            background-color: #f0f0f0;
+            background-color: #e8e8e8;
+            min-height: 0; /* 允许 flex 子项收缩 */
         }
 
-        /* 主游戏区 */
+        /* 主游戏区 - 占据全部空间 */
         #main-area {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
             cursor: grab;
             touch-action: none; 
-            background-color: #e8e8e8;
         }
         #main-area:active { cursor: grabbing; }
         #main-canvas {
@@ -136,21 +139,10 @@
             left: 0;
         }
 
-        /* 预览区 */
-        #preview-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            z-index: 5;
-            flex-shrink: 0;
-            pointer-events: none;
-        }
-
         /* 目标预览框 */
         #target-panel {
-            width: 140px;
-            height: 140px;
+            width: 130px;
+            height: 130px;
             background: #fff;
             border-radius: 50%;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -160,21 +152,33 @@
             display: none;
         }
 
-        /* 桌面/横屏适配 */
+        /* 预览区 - 悬浮在画布之上 */
+        #preview-area {
+            position: absolute;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 默认竖屏：底部居中悬浮 */
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 横屏/桌面适配 */
         @media (min-width: 768px), (orientation: landscape) {
-            #game-container { flex-direction: row; }
-            #main-area { height: 100%; width: 100%; }
             #preview-area {
-                position: absolute;
+                /* 横屏：右上角悬浮 */
+                bottom: auto;
                 top: 20px;
+                left: auto;
                 right: 20px;
-                height: auto;
-                background: transparent;
-                border: none;
+                transform: none;
             }
             #target-panel {
-                width: 180px;
-                height: 180px;
+                width: 160px;
+                height: 160px;
                 box-shadow: 0 8px 25px rgba(0,0,0,0.3);
                 border: 4px solid #222;
             }
@@ -193,6 +197,7 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             z-index: 20;
             width: 300px;
+            max-width: 90vw;
         }
         .modal h3 {
             margin-bottom: 10px;
@@ -202,7 +207,7 @@
             padding-bottom: 8px;
         }
         #settings-modal { top: 60px; left: 20px; transform: none; }
-        #help-modal { top: 60px; left: auto; right: 20px; transform: none; width: 320px; }
+        #help-modal { top: 60px; left: auto; right: 20px; transform: none; }
         #help-modal ul {
             margin-left: 20px;
             font-size: 14px;
@@ -322,7 +327,10 @@
 <body>
 
     <header>
-        <button id="settings-btn" class="header-btn">⚙️</button>
+        <div class="header-left">
+            <button id="fullscreen-btn" class="header-btn">⛶</button>
+            <button id="settings-btn" class="header-btn">⚙️</button>
+        </div>
         <div id="game-title">点线探微</div>
         <div class="header-right">
             <button id="hint-btn" class="header-btn">💡</button>
@@ -340,8 +348,9 @@
     <div id="info-bar">
         <div>题号: <span id="info-id">--</span></div>
         <div>点数: <span id="info-dots">--</span></div>
-        <div>颜色种数: <span id="info-colors">--</span></div>
-        <div>框选范围: <span id="info-ratio">--</span></div>
+        <div>颜色: <span id="info-colors">--</span></div>
+        <div>范围: <span id="info-ratio">--</span></div>
+        <div>时间: <span id="info-time" class="highlight-time">00:00</span></div>
     </div>
 
     <div id="game-container">
@@ -349,6 +358,7 @@
             <canvas id="main-canvas"></canvas>
         </div>
         
+        <!-- 悬浮预览区 -->
         <div id="preview-area">
             <div id="target-panel">
                 <canvas id="preview-canvas"></canvas>
@@ -402,10 +412,10 @@
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>指定编号：</strong>输入编号，在相同参数下生成固定的题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽移动盘面；滚轮或双指捏合缩放。</li>
-                <li><strong>大小提示：</strong>放大时，<strong>外圈黑框变红</strong>，说明大小匹配。若忘记大小，可<strong>长按屏幕 1.5 秒</strong>显示范围大小（松开消失）。</li>
+                <li><strong>大小提示：</strong>放大时，<strong>外圈黑框变红</strong>，说明大小匹配。若忘记大小，可<strong>长按屏幕 1.5 秒</strong>显示范围大小。</li>
                 <li><strong>验证匹配：</strong>在画面中<strong>连续双击</strong>（手机连点两次），若位置和大小达标，则判定成功。</li>
                 <li><strong>答案提示：</strong>点击右上角的 💡 可以显示目标位置（黑圈），再次点击隐藏。</li>
-                <li><strong>挑战模式：</strong>在设置中开启后，预览图的颜色将统一变为黑色（单色模式除外）。</li>
+                <li><strong>挑战模式：</strong>开启后预览图的颜色将统一变为黑色。</li>
             </ul>
         </div>
 
@@ -448,7 +458,7 @@
             dotCount: 1200,
             colorCount: 3,
             targetRadiusRatio: 0.15, 
-            isChallengeMode: false,  // 默认简单模式
+            isChallengeMode: false,  
             
             targetRadius: 300,        
             dots: [],
@@ -466,7 +476,11 @@
             // 长按提示控制
             showAreaHint: false,
             longPressTimer: null,
-            longPressTriggered: false
+            longPressTriggered: false,
+            
+            // 计时器
+            timerInterval: null,
+            startTime: 0
         };
 
         const mainArea = document.getElementById('main-area');
@@ -477,6 +491,7 @@
         const previewCanvas = document.getElementById('preview-canvas');
         const pCtx = previewCanvas.getContext('2d');
         
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
         const helpBtn = document.getElementById('help-btn');
@@ -500,25 +515,70 @@
         const infoDots = document.getElementById('info-dots');
         const infoColors = document.getElementById('info-colors');
         const infoRatio = document.getElementById('info-ratio');
+        const infoTime = document.getElementById('info-time');
 
-        // 模式开关相关元素
         const labelSimple = document.getElementById('label-simple');
         const labelChallenge = document.getElementById('label-challenge');
         const modeToggle = document.getElementById('mode-toggle');
+
+        // --- 全屏功能 ---
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fullscreenBtn.innerText = '🗗'; // 退出全屏图标
+            } else {
+                fullscreenBtn.innerText = '⛶'; // 全屏图标
+            }
+            // 全屏切换后重新计算尺寸
+            setTimeout(resizeCanvas, 100);
+        });
+
+        // --- 计时器逻辑 ---
+        function startTimer() {
+            stopTimer();
+            state.startTime = Date.now();
+            infoTime.innerText = '00:00';
+            infoTime.classList.remove('highlight-time');
+            
+            state.timerInterval = setInterval(() => {
+                if (!state.isPlaying || state.gameWon) return;
+                const now = Date.now();
+                const diff = Math.floor((now - state.startTime) / 1000);
+                const m = String(Math.floor(diff / 60)).padStart(2, '0');
+                const s = String(diff % 60).padStart(2, '0');
+                infoTime.innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+        }
 
         function getActiveColors() {
             if (state.colorCount === 1) return ['#000000'];
             return CONFIG.colors.slice(0, state.colorCount);
         }
 
-        // 更新模式开关的UI
         function updateModeSwitchUI() {
             if (state.isChallengeMode && state.colorCount > 1) {
                 labelSimple.classList.remove('active');
                 labelChallenge.classList.add('active');
                 modeToggle.classList.add('challenge-mode');
             } else {
-                // 如果颜色数为1，强制简单模式
                 if (state.colorCount === 1) {
                     state.isChallengeMode = false;
                 }
@@ -528,7 +588,6 @@
             }
         }
 
-        // 开关交互
         modeToggle.addEventListener('click', () => {
             if (state.colorCount === 1) {
                 showToast('单色模式下无挑战模式', false, 1500);
@@ -556,17 +615,18 @@
 
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
-            const rect = mainArea.getBoundingClientRect();
+            const width = mainArea.clientWidth;
+            const height = mainArea.clientHeight;
             
-            mainCanvas.width = rect.width * dpr;
-            mainCanvas.height = rect.height * dpr;
-            mainCanvas.style.width = rect.width + 'px';
-            mainCanvas.style.height = rect.height + 'px';
+            mainCanvas.width = width * dpr;
+            mainCanvas.height = height * dpr;
+            mainCanvas.style.width = width + 'px';
+            mainCanvas.style.height = height + 'px';
             
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
 
-            state.screenRadius = Math.min(rect.width, rect.height) * 0.45;
+            state.screenRadius = Math.min(width, height) * 0.45;
             
             updateZoomValues();
 
@@ -730,7 +790,6 @@
             pCtx.scale(fitZoom, fitZoom);
             pCtx.translate(-state.target.x, -state.target.y);
 
-            // 判断是否使用挑战模式颜色（黑色）
             const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
 
             state.dots.forEach(dot => {
@@ -757,14 +816,12 @@
 
             const isZoomMatch = state.isPlaying && Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom < 0.15;
 
-            // 1. 绘制白色底圆
             ctx.beginPath();
             ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
 
             if (state.isPlaying) {
-                // 2. 绘制内部点阵与提示
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
@@ -784,13 +841,11 @@
                     if (dot.x >= minX && dot.x <= maxX && dot.y >= minY && dot.y <= maxY) {
                         ctx.beginPath();
                         ctx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
-                        // 大图始终显示原色，方便寻找
                         ctx.fillStyle = dot.color; 
                         ctx.fill();
                     }
                 });
 
-                // 胜利金圈
                 if (state.gameWon) {
                     ctx.beginPath();
                     ctx.arc(state.target.x, state.target.y, state.targetRadius, 0, Math.PI * 2);
@@ -801,7 +856,6 @@
                     ctx.setLineDash([]);
                 }
 
-                // 答案提示黑圈
                 if (state.showHint && !state.gameWon) {
                     ctx.beginPath();
                     ctx.arc(state.target.x, state.target.y, state.targetRadius, 0, Math.PI * 2);
@@ -810,7 +864,6 @@
                     ctx.stroke();
                 }
 
-                // 中央大小示意圈
                 if (state.showAreaHint && !state.gameWon) {
                     ctx.beginPath();
                     ctx.arc(state.view.x, state.view.y, state.targetRadius, 0, Math.PI * 2);
@@ -824,7 +877,6 @@
                 ctx.restore();
             }
 
-            // 3. 绘制最外层的边框
             ctx.beginPath();
             ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
             ctx.lineWidth = 8; 
@@ -848,6 +900,8 @@
 
             if (worldDist <= posTolerance) {
                 state.gameWon = true;
+                stopTimer();
+                infoTime.classList.add('highlight-time');
                 showToast('匹配成功！🎉', true, 3000);
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
                 draw();
@@ -881,7 +935,6 @@
 
         // --- 交互事件 ---
 
-        // 长按逻辑
         function startPressTimer() {
             if (!state.isPlaying || state.gameWon) return;
             state.longPressTriggered = false;
@@ -1068,7 +1121,6 @@
         settingsBtn.addEventListener('click', () => {
             helpModal.style.display = 'none';
             idModal.style.display = 'none';
-            // 每次打开设置时，确保开关UI与状态同步
             updateModeSwitchUI();
             settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
         });
@@ -1103,13 +1155,11 @@
             
             if (state.longPressTimer) clearTimeout(state.longPressTimer);
             
-            // 检查模式合法性
             if (state.colorCount === 1) {
                 state.isChallengeMode = false;
             }
             updateModeSwitchUI();
 
-            // 种子
             const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.isChallengeMode ? 'c' : 's'}`;
             const seedFunc = xmur3(seedStr);
             state.rng = mulberry32(seedFunc());
@@ -1127,9 +1177,12 @@
             fitViewToScreen();
             
             targetPanel.style.display = 'block';
+            
+            // 启动计时器
+            startTimer();
+            
             resizeCanvas(); 
 
-            // 初始提示
             setTimeout(() => {
                 if (state.isPlaying) {
                     state.showAreaHint = false;
@@ -1181,7 +1234,6 @@
             state.dotCount = Math.max(100, Math.min(5000, state.dotCount));
             state.colorCount = Math.max(1, Math.min(CONFIG.colors.length, state.colorCount));
             
-            // 如果颜色改为1，强制取消挑战模式
             if (state.colorCount === 1) {
                 state.isChallengeMode = false;
             }
@@ -1206,7 +1258,6 @@
             setTimeout(resizeCanvas, 50); 
         });
 
-        // 初始化
         updateModeSwitchUI();
         resizeCanvas();
     </script>
