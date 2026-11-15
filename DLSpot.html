@@ -95,7 +95,6 @@
         .ctrl-btn.primary { background-color: #4CAF50; color: white; border-color: #4CAF50; }
         .ctrl-btn.primary:hover { background-color: #45a049; }
         
-        /* 确认按钮的特殊样式 */
         #confirm-match-btn:not(:disabled) {
             background-color: #2196F3;
             color: white;
@@ -110,6 +109,7 @@
             color: #999;
             border-color: #ccc;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         /* 信息栏 (允许折行) */
@@ -160,6 +160,38 @@
             left: 0;
         }
 
+        /* 预览区结构 */
+        #preview-area {
+            height: 170px;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            z-index: 5;
+            gap: 15px;
+        }
+
+        /* 包含文字和小圆圈的容器 */
+        .target-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 目标编号小字 */
+        #target-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+
         /* 目标预览框 */
         #target-panel {
             width: 140px;
@@ -171,18 +203,40 @@
             border: 3px solid #333;
             position: relative;
             pointer-events: auto; 
+            transition: border-color 0.3s;
         }
 
-        /* 预览区 */
-        #preview-area {
-            height: 160px;
-            background-color: #e0e0e0;
+        /* 左右切换按钮 */
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
             display: flex;
             justify-content: center;
             align-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
             flex-shrink: 0;
-            z-index: 5;
-            pointer-events: none; 
+            transition: all 0.2s;
+            padding: 0;
+            outline: none;
+        }
+        .nav-btn:active:not(:disabled) {
+            background: #ddd;
+        }
+        .nav-btn:disabled {
+            background-color: #e0e0e0;
+            color: #999;
+            border-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
         /* 横屏/桌面适配 */
@@ -201,6 +255,7 @@
                 right: 20px;
                 height: auto;
                 background: transparent;
+                gap: 10px;
             }
             #target-panel {
                 width: 160px;
@@ -378,6 +433,8 @@
         <div>点数: <span id="info-dots">--</span></div>
         <div>颜色: <span id="info-colors">--</span></div>
         <div>范围: <span id="info-ratio">--</span></div>
+        <div>目标: <span id="info-targets">--</span></div>
+        <div>模式: <span id="info-mode">--</span></div>
         <div>时间: <span id="info-time">00:00</span></div>
     </div>
 
@@ -387,9 +444,16 @@
         </div>
         
         <div id="preview-area">
-            <div id="target-panel">
-                <canvas id="preview-canvas"></canvas>
+            <button id="nav-left" class="nav-btn">◀</button>
+            
+            <div class="target-wrapper">
+                <div id="target-label">目标 1</div>
+                <div id="target-panel">
+                    <canvas id="preview-canvas"></canvas>
+                </div>
             </div>
+
+            <button id="nav-right" class="nav-btn">▶</button>
         </div>
 
         <!-- 设置面板 -->
@@ -406,6 +470,10 @@
             <div class="setting-item">
                 <label>目标区域占比 (5%-30%)</label>
                 <input type="number" id="input-target-ratio" value="15" min="5" max="30" step="0.5">
+            </div>
+            <div class="setting-item">
+                <label>目标数量 (1-10)</label>
+                <input type="number" id="input-target-count" value="1" min="1" max="10">
             </div>
             <!-- 游戏模式开关 -->
             <div class="setting-item">
@@ -439,9 +507,9 @@
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽大盘面移动；滚轮或双指捏合缩放。</li>
                 <li><strong>大小提示：</strong>刚开始时盘面中央会出现<strong>灰色实线框</strong>。若忘记，可<strong>长按目标盘面（小圆圈） 1.5 秒</strong>显示范围提示，松开消失。</li>
-                <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配，此时点击上方的<strong>“确认”</strong>按钮即可判定。若变<strong>红色</strong>说明放大过度。</li>
-                <li><strong>答案提示：</strong>点击右上角的 💡 可以显示目标位置（黑圈），再次点击隐藏。</li>
-                <li><strong>挑战模式：</strong>开启后预览图的颜色将统一变为黑色。</li>
+                <li><strong>切换目标：</strong>当有多个目标时，可通过盘面左右两侧的箭头循环切换查看。</li>
+                <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配，此时点击上方的<strong>“确认”</strong>按钮，只要屏幕中心与<strong>任意一个</strong>未找到的目标匹配即可判定成功。</li>
+                <li><strong>答案提示：</strong>点击右上角的 💡 可以显示当前查看的目标位置（黑圈），再次点击隐藏。</li>
             </ul>
         </div>
 
@@ -484,11 +552,14 @@
             dotCount: 1200,
             colorCount: 3,
             targetRadiusRatio: 0.15, 
+            targetCount: 1,
             isChallengeMode: false,  
             
             targetRadius: 300,        
             dots: [],
-            target: { x: 0, y: 0 },
+            targets: [],             
+            currentTargetIndex: 0,   
+            
             view: { x: 0, y: 0, zoom: 0.4 },
             screenRadius: 300,    
             baseZoom: 0.1,        
@@ -513,6 +584,9 @@
         const targetPanel = document.getElementById('target-panel');
         const previewCanvas = document.getElementById('preview-canvas');
         const pCtx = previewCanvas.getContext('2d');
+        const navLeft = document.getElementById('nav-left');
+        const navRight = document.getElementById('nav-right');
+        const targetLabel = document.getElementById('target-label');
         
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const fsIconExpand = document.getElementById('fs-icon-expand');
@@ -535,6 +609,7 @@
         const inputDots = document.getElementById('input-dots');
         const inputColors = document.getElementById('input-colors');
         const inputTargetRatio = document.getElementById('input-target-ratio');
+        const inputTargetCount = document.getElementById('input-target-count');
         const applyBtn = document.getElementById('apply-settings');
         const toast = document.getElementById('toast');
         
@@ -542,6 +617,8 @@
         const infoDots = document.getElementById('info-dots');
         const infoColors = document.getElementById('info-colors');
         const infoRatio = document.getElementById('info-ratio');
+        const infoMode = document.getElementById('info-mode');
+        const infoTargets = document.getElementById('info-targets');
         const infoTime = document.getElementById('info-time');
 
         const labelSimple = document.getElementById('label-simple');
@@ -555,9 +632,7 @@
                     console.log(`Error attempting to enable fullscreen: ${err.message}`);
                 });
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                if (document.exitFullscreen) document.exitFullscreen();
             }
         });
 
@@ -572,7 +647,7 @@
             setTimeout(resizeCanvas, 100);
         });
 
-        // --- 计时器逻辑 ---
+        // --- 计时器 ---
         function startTimer() {
             stopTimer();
             state.startTime = Date.now();
@@ -740,22 +815,32 @@
             }
         }
 
-        function generateUniqueTarget() {
+        function generateUniqueTargets() {
+            state.targets = [];
             let attempts = 0;
-            const maxAttempts = 100;
+            const maxAttempts = 500;
             
-            while (attempts < maxAttempts) {
+            while (state.targets.length < state.targetCount && attempts < maxAttempts) {
+                attempts++;
                 const maxTargetDist = CONFIG.worldRadius - state.targetRadius - 20;
                 const angle = state.rng() * Math.PI * 2;
                 const r = Math.sqrt(state.rng()) * maxTargetDist;
                 const tx = Math.cos(angle) * r;
                 const ty = Math.sin(angle) * r;
                 
+                let tooClose = false;
+                for(let t of state.targets) {
+                    if (Math.hypot(t.x - tx, t.y - ty) < state.targetRadius * 2.5) {
+                        tooClose = true; break;
+                    }
+                }
+                if (tooClose) continue;
+
                 let dotCount = 0;
                 for(let d of state.dots) {
                     if (Math.hypot(d.x - tx, d.y - ty) < state.targetRadius) dotCount++;
                 }
-                if (dotCount < 5) { attempts++; continue; }
+                if (dotCount < 5) { continue; }
 
                 const targetDots = [];
                 for (let d of state.dots) {
@@ -790,14 +875,39 @@
                 }
 
                 if (isUnique) {
-                    state.target.x = tx;
-                    state.target.y = ty;
-                    return;
+                    state.targets.push({ x: tx, y: ty, found: false });
                 }
-                attempts++;
             }
-            state.target.x = 0;
-            state.target.y = 0;
+            
+            while(state.targets.length < state.targetCount) {
+                state.targets.push({ x: 0, y: 0, found: false });
+            }
+        }
+
+        function updateTargetInfo() {
+            const foundCount = state.targets.filter(t => t.found).length;
+            infoTargets.innerText = `${foundCount}/${state.targets.length}`;
+        }
+
+        function updateNavButtonsState() {
+            navLeft.style.display = 'flex';
+            navRight.style.display = 'flex';
+            
+            if (state.targetCount <= 1) {
+                navLeft.disabled = true;
+                navRight.disabled = true;
+            } else {
+                navLeft.disabled = false;
+                navRight.disabled = false;
+            }
+        }
+
+        function updateTargetLabel() {
+            if (state.targetCount > 1) {
+                targetLabel.innerText = `目标 ${state.currentTargetIndex + 1} / ${state.targetCount}`;
+            } else {
+                targetLabel.innerText = `目标 1`;
+            }
         }
 
         function renderPreview() {
@@ -806,20 +916,22 @@
             const pHeight = previewCanvas.height / dpr;
             
             pCtx.clearRect(0, 0, pWidth, pHeight);
-            if (!state.isPlaying) return;
+            if (!state.isPlaying || state.targets.length === 0) return;
+
+            const currentTarget = state.targets[state.currentTargetIndex];
 
             pCtx.save();
             pCtx.translate(pWidth / 2, pHeight / 2);
             
             const fitZoom = (pWidth / 2) / state.targetRadius;
             pCtx.scale(fitZoom, fitZoom);
-            pCtx.translate(-state.target.x, -state.target.y);
+            pCtx.translate(-currentTarget.x, -currentTarget.y);
 
             const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
 
             state.dots.forEach(dot => {
-                const dx = dot.x - state.target.x;
-                const dy = dot.y - state.target.y;
+                const dx = dot.x - currentTarget.x;
+                const dy = dot.y - currentTarget.y;
                 if (dx*dx + dy*dy < Math.pow(state.targetRadius * 1.5, 2)) {
                     pCtx.beginPath();
                     pCtx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
@@ -828,6 +940,12 @@
                 }
             });
             pCtx.restore();
+
+            if (currentTarget.found) {
+                targetPanel.style.borderColor = '#4CAF50'; 
+            } else {
+                targetPanel.style.borderColor = '#333';
+            }
         }
 
         function draw() {
@@ -839,7 +957,7 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            let borderColor = '#222'; // 默认黑色
+            let borderColor = '#222'; 
             let isSizeMatch = false;
             
             if (state.isPlaying && !state.gameWon) {
@@ -847,14 +965,13 @@
                 const zoomDiff = Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom;
                 
                 if (currentViewWorldRadius < state.targetRadius) {
-                    borderColor = '#E53935'; // 放大过度，红色
+                    borderColor = '#E53935'; 
                 } else if (zoomDiff < 0.15) {
-                    borderColor = '#4CAF50'; // 合理范围，绿色
+                    borderColor = '#4CAF50'; 
                     isSizeMatch = true;
                 }
             }
 
-            // 控制确认按钮的可用状态
             if (state.isPlaying && isSizeMatch && !state.gameWon) {
                 confirmMatchBtn.disabled = false;
             } else {
@@ -891,18 +1008,20 @@
                     }
                 });
 
-                // 成功后的绿色实线框
-                if (state.gameWon) {
-                    ctx.beginPath();
-                    ctx.arc(state.target.x, state.target.y, state.targetRadius, 0, Math.PI * 2);
-                    ctx.lineWidth = 6 / state.view.zoom; // 加粗
-                    ctx.strokeStyle = '#4CAF50'; // 绿色
-                    ctx.stroke(); // 实线
-                }
+                state.targets.forEach(t => {
+                    if (t.found) {
+                        ctx.beginPath();
+                        ctx.arc(t.x, t.y, state.targetRadius, 0, Math.PI * 2);
+                        ctx.lineWidth = 6 / state.view.zoom;
+                        ctx.strokeStyle = '#4CAF50'; 
+                        ctx.stroke();
+                    }
+                });
 
-                if (state.showHint && !state.gameWon) {
+                if (state.showHint && !state.gameWon && state.targets[state.currentTargetIndex]) {
+                    const curT = state.targets[state.currentTargetIndex];
                     ctx.beginPath();
-                    ctx.arc(state.target.x, state.target.y, state.targetRadius, 0, Math.PI * 2);
+                    ctx.arc(curT.x, curT.y, state.targetRadius, 0, Math.PI * 2);
                     ctx.lineWidth = 2 / state.view.zoom;
                     ctx.strokeStyle = '#000000';
                     ctx.stroke();
@@ -926,36 +1045,73 @@
             ctx.stroke();
         }
 
-        // 确认按钮触发的匹配逻辑
         function checkMatch() {
             if (!state.isPlaying || state.gameWon || confirmMatchBtn.disabled) return;
 
-            const worldDx = state.view.x - state.target.x;
-            const worldDy = state.view.y - state.target.y;
-            const worldDist = Math.hypot(worldDx, worldDy);
+            let bestMatchTarget = null;
+            let minDist = Infinity;
             const posTolerance = state.targetRadius * 0.45; 
 
-            if (worldDist <= posTolerance) {
-                state.gameWon = true;
-                stopTimer();
-                infoTime.classList.add('highlight-time'); // 变绿
-                showToast('匹配成功！🎉', true, 3000);
+            // 遍历所有目标，寻找匹配的
+            for (let i = 0; i < state.targets.length; i++) {
+                const t = state.targets[i];
+                if (t.found) continue; // 跳过已找到的
+
+                const worldDx = state.view.x - t.x;
+                const worldDy = state.view.y - t.y;
+                const worldDist = Math.hypot(worldDx, worldDy);
+
+                // 如果距离在容差内，且是目前离中心最近的未找到目标
+                if (worldDist <= posTolerance && worldDist < minDist) {
+                    minDist = worldDist;
+                    bestMatchTarget = { index: i, data: t };
+                }
+            }
+
+            if (bestMatchTarget) {
+                bestMatchTarget.data.found = true;
+                updateTargetInfo();
+                
+                const allFound = state.targets.every(t => t.found);
+                if (allFound) {
+                    state.gameWon = true;
+                    stopTimer();
+                    infoTime.classList.add('highlight-time');
+                    showToast('全部找到，游戏通关！🎉', true);
+                } else {
+                    showToast('找到目标！请点击继续', true);
+                    // 自动切换到下一个未找到的目标
+                    let nextIdx = (state.currentTargetIndex + 1) % state.targetCount;
+                    for(let i=0; i<state.targetCount; i++) {
+                        if (!state.targets[nextIdx].found) {
+                            state.currentTargetIndex = nextIdx;
+                            break;
+                        }
+                        nextIdx = (nextIdx + 1) % state.targetCount;
+                    }
+                }
+
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+                
+                updateNavButtonsState();
+                updateTargetLabel();
+                renderPreview();
                 draw();
             } else {
                 showToast('位置不对，请继续寻找', false);
             }
         }
 
-        confirmMatchBtn.addEventListener('click', checkMatch);
-
-        function showToast(text, isSuccess, duration = 1500) {
+        function showToast(text, isSuccess) {
             toast.innerText = text;
             toast.className = isSuccess ? 'toast-success' : 'toast-error';
             toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, duration);
+            
+            if (!isSuccess) {
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 1500);
+            }
         }
 
         function screenToWorld(screenX, screenY) {
@@ -972,7 +1128,7 @@
             };
         }
 
-        // --- 长按逻辑 (目标盘面) ---
+        // --- 长按逻辑 ---
         function startPressTimer() {
             if (!state.isPlaying || state.gameWon) return;
             state.longPressTriggered = false;
@@ -1017,9 +1173,28 @@
         targetPanel.addEventListener('touchend', cancelPressTimer);
         targetPanel.addEventListener('touchcancel', cancelPressTimer);
 
+        // --- 循环切换目标事件 ---
+        navLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.targetCount <= 1) return;
+            state.currentTargetIndex = (state.currentTargetIndex - 1 + state.targetCount) % state.targetCount;
+            updateNavButtonsState();
+            updateTargetLabel();
+            renderPreview();
+            draw();
+        });
 
-        // --- 大盘面交互事件 (取消双击) ---
+        navRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.targetCount <= 1) return;
+            state.currentTargetIndex = (state.currentTargetIndex + 1) % state.targetCount;
+            updateNavButtonsState();
+            updateTargetLabel();
+            renderPreview();
+            draw();
+        });
 
+        // --- 大盘面交互事件 ---
         mainArea.addEventListener('mousedown', (e) => {
             if (!state.isPlaying) return;
             state.isDragging = true;
@@ -1133,8 +1308,11 @@
         });
 
         // --- 按钮与UI ---
-
         document.addEventListener('click', (e) => {
+            if (toast.style.display === 'block' && !toast.classList.contains('toast-error')) {
+                toast.style.display = 'none';
+            }
+
             if (!settingsModal.contains(e.target) && e.target !== settingsBtn) {
                 settingsModal.style.display = 'none';
             }
@@ -1146,24 +1324,29 @@
             }
         });
 
-        settingsBtn.addEventListener('click', () => {
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             helpModal.style.display = 'none';
             idModal.style.display = 'none';
             updateModeSwitchUI();
             settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
         });
 
-        helpBtn.addEventListener('click', () => {
+        helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             settingsModal.style.display = 'none';
             idModal.style.display = 'none';
             helpModal.style.display = helpModal.style.display === 'block' ? 'none' : 'block';
         });
 
-        hintBtn.addEventListener('click', () => {
+        hintBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (!state.isPlaying || state.gameWon) return;
             state.showHint = !state.showHint;
             draw();
         });
+
+        confirmMatchBtn.addEventListener('click', checkMatch);
 
         function generateRandomId() {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -1180,6 +1363,7 @@
             state.showHint = false;
             state.showAreaHint = true;
             state.currentId = id;
+            state.currentTargetIndex = 0;
             
             if (state.longPressTimer) clearTimeout(state.longPressTimer);
             
@@ -1188,7 +1372,7 @@
             }
             updateModeSwitchUI();
 
-            const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.isChallengeMode ? 'c' : 's'}`;
+            const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.targetCount}_${state.isChallengeMode ? 'c' : 's'}`;
             const seedFunc = xmur3(seedStr);
             state.rng = mulberry32(seedFunc());
 
@@ -1196,12 +1380,16 @@
             infoDots.innerText = state.dotCount;
             infoColors.innerText = state.colorCount;
             infoRatio.innerText = (state.targetRadiusRatio * 100).toFixed(1) + '%';
+            infoMode.innerText = state.isChallengeMode ? '挑战' : '简单';
             
             startGameBtn.innerText = '新的开始';
 
             updateZoomValues();
             generateDots();
-            generateUniqueTarget();
+            generateUniqueTargets();
+            updateTargetInfo();
+            updateNavButtonsState();
+            updateTargetLabel();
             fitViewToScreen();
             
             startTimer();
@@ -1221,7 +1409,8 @@
             startGameWithId(newId);
         });
 
-        specifyIdBtn.addEventListener('click', () => {
+        specifyIdBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             settingsModal.style.display = 'none';
             helpModal.style.display = 'none';
             inputId.value = '';
@@ -1256,6 +1445,9 @@
             ratioVal = Math.max(5, Math.min(30, ratioVal));
             state.targetRadiusRatio = ratioVal / 100;
 
+            state.targetCount = parseInt(inputTargetCount.value) || 1;
+            state.targetCount = Math.max(1, Math.min(10, state.targetCount));
+
             state.dotCount = Math.max(100, Math.min(5000, state.dotCount));
             state.colorCount = Math.max(1, Math.min(CONFIG.colors.length, state.colorCount));
             
@@ -1266,16 +1458,13 @@
             inputDots.value = state.dotCount;
             inputColors.value = state.colorCount;
             inputTargetRatio.value = ratioVal;
+            inputTargetCount.value = state.targetCount;
 
             updateModeSwitchUI();
             settingsModal.style.display = 'none';
 
             if (state.isPlaying) {
                 startGameWithId(state.currentId);
-            } else {
-                infoDots.innerText = state.dotCount;
-                infoColors.innerText = state.colorCount;
-                infoRatio.innerText = (state.targetRadiusRatio * 100).toFixed(1) + '%';
             }
         });
 
