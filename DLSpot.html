@@ -94,6 +94,23 @@
         .ctrl-btn:hover { background-color: #e0e0e0; }
         .ctrl-btn.primary { background-color: #4CAF50; color: white; border-color: #4CAF50; }
         .ctrl-btn.primary:hover { background-color: #45a049; }
+        
+        /* 确认按钮的特殊样式 */
+        #confirm-match-btn:not(:disabled) {
+            background-color: #2196F3;
+            color: white;
+            border-color: #2196F3;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.4);
+        }
+        #confirm-match-btn:not(:disabled):hover {
+            background-color: #1976D2;
+        }
+        .ctrl-btn:disabled {
+            background-color: #e0e0e0;
+            color: #999;
+            border-color: #ccc;
+            cursor: not-allowed;
+        }
 
         /* 信息栏 (允许折行) */
         #info-bar {
@@ -115,20 +132,19 @@
         #info-bar span { font-weight: bold; color: #333; }
         #info-bar div { white-space: nowrap; }
         
-        /* 成功后时间变绿 */
         .highlight-time { color: #4CAF50 !important; }
 
         /* 游戏主容器 */
         #game-container {
             flex: 1;
             display: flex;
-            flex-direction: column; /* 竖屏布局：上下 */
+            flex-direction: column;
             position: relative;
             background-color: #e8e8e8;
             min-height: 0;
         }
 
-        /* 主游戏区 - 占据剩余空间 */
+        /* 主游戏区 */
         #main-area {
             flex: 1;
             position: relative;
@@ -144,7 +160,7 @@
             left: 0;
         }
 
-        /* 目标预览框 - 默认显示白底黑边 */
+        /* 目标预览框 */
         #target-panel {
             width: 140px;
             height: 140px;
@@ -157,7 +173,7 @@
             pointer-events: auto; 
         }
 
-        /* 预览区 - 竖屏时固定在底部 */
+        /* 预览区 */
         #preview-area {
             height: 160px;
             background-color: #e0e0e0;
@@ -171,9 +187,7 @@
 
         /* 横屏/桌面适配 */
         @media (min-width: 768px), (orientation: landscape) {
-            #game-container {
-                display: block; 
-            }
+            #game-container { display: block; }
             #main-area {
                 position: absolute;
                 top: 0;
@@ -196,13 +210,13 @@
             }
         }
 
-        /* 弹窗通用样式 - 改为屏幕正中央 */
+        /* 弹窗通用样式 */
         .modal {
             display: none;
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%); /* 居中定位 */
+            transform: translate(-50%, -50%);
             background: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -354,6 +368,7 @@
     <!-- 操作按钮 -->
     <div id="control-bar">
         <button id="start-game-btn" class="ctrl-btn primary">开始游戏</button>
+        <button id="confirm-match-btn" class="ctrl-btn" disabled>确认</button>
         <button id="specify-id-btn" class="ctrl-btn">指定编号</button>
     </div>
     
@@ -423,8 +438,8 @@
             <ul>
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽大盘面移动；滚轮或双指捏合缩放。</li>
-                <li><strong>大小提示：</strong>刚开始时盘面中央会出现<strong>灰色实线框</strong>（即框选范围大小）。若忘记，可<strong>长按目标盘面（小圆圈） 1.5 秒</strong>显示范围提示，松开消失。</li>
-                <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配；若变<strong>红色</strong>则说明放大过度。当外框为绿色时，<strong>连续双击大盘面</strong>进行位置验证。</li>
+                <li><strong>大小提示：</strong>刚开始时盘面中央会出现<strong>灰色实线框</strong>。若忘记，可<strong>长按目标盘面（小圆圈） 1.5 秒</strong>显示范围提示，松开消失。</li>
+                <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配，此时点击上方的<strong>“确认”</strong>按钮即可判定。若变<strong>红色</strong>说明放大过度。</li>
                 <li><strong>答案提示：</strong>点击右上角的 💡 可以显示目标位置（黑圈），再次点击隐藏。</li>
                 <li><strong>挑战模式：</strong>开启后预览图的颜色将统一变为黑色。</li>
             </ul>
@@ -481,7 +496,6 @@
             isDragging: false,
             lastMousePos: { x: 0, y: 0 },
             gameWon: false,
-            lastTap: 0,
             showHint: false,
             
             showAreaHint: false,
@@ -511,6 +525,7 @@
         const hintBtn = document.getElementById('hint-btn');
         
         const startGameBtn = document.getElementById('start-game-btn');
+        const confirmMatchBtn = document.getElementById('confirm-match-btn');
         const specifyIdBtn = document.getElementById('specify-id-btn');
         const idModal = document.getElementById('id-modal');
         const inputId = document.getElementById('input-id');
@@ -562,7 +577,7 @@
             stopTimer();
             state.startTime = Date.now();
             infoTime.innerText = '00:00';
-            infoTime.classList.remove('highlight-time'); // 移除绿色
+            infoTime.classList.remove('highlight-time');
             
             state.timerInterval = setInterval(() => {
                 if (!state.isPlaying || state.gameWon) return;
@@ -825,7 +840,9 @@
             ctx.clearRect(0, 0, width, height);
 
             let borderColor = '#222'; // 默认黑色
-            if (state.isPlaying) {
+            let isSizeMatch = false;
+            
+            if (state.isPlaying && !state.gameWon) {
                 const currentViewWorldRadius = state.screenRadius / state.view.zoom;
                 const zoomDiff = Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom;
                 
@@ -833,7 +850,15 @@
                     borderColor = '#E53935'; // 放大过度，红色
                 } else if (zoomDiff < 0.15) {
                     borderColor = '#4CAF50'; // 合理范围，绿色
+                    isSizeMatch = true;
                 }
+            }
+
+            // 控制确认按钮的可用状态
+            if (state.isPlaying && isSizeMatch && !state.gameWon) {
+                confirmMatchBtn.disabled = false;
+            } else {
+                confirmMatchBtn.disabled = true;
             }
 
             ctx.beginPath();
@@ -866,14 +891,13 @@
                     }
                 });
 
+                // 成功后的绿色实线框
                 if (state.gameWon) {
                     ctx.beginPath();
                     ctx.arc(state.target.x, state.target.y, state.targetRadius, 0, Math.PI * 2);
-                    ctx.lineWidth = 4 / state.view.zoom;
-                    ctx.strokeStyle = '#FFD700';
-                    ctx.setLineDash([10 / state.view.zoom, 10 / state.view.zoom]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
+                    ctx.lineWidth = 6 / state.view.zoom; // 加粗
+                    ctx.strokeStyle = '#4CAF50'; // 绿色
+                    ctx.stroke(); // 实线
                 }
 
                 if (state.showHint && !state.gameWon) {
@@ -902,13 +926,9 @@
             ctx.stroke();
         }
 
+        // 确认按钮触发的匹配逻辑
         function checkMatch() {
-            if (!state.isPlaying || state.gameWon) return;
-
-            const zoomDiff = Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom;
-            if (zoomDiff > 0.15) {
-                return;
-            }
+            if (!state.isPlaying || state.gameWon || confirmMatchBtn.disabled) return;
 
             const worldDx = state.view.x - state.target.x;
             const worldDy = state.view.y - state.target.y;
@@ -926,6 +946,8 @@
                 showToast('位置不对，请继续寻找', false);
             }
         }
+
+        confirmMatchBtn.addEventListener('click', checkMatch);
 
         function showToast(text, isSuccess, duration = 1500) {
             toast.innerText = text;
@@ -950,7 +972,7 @@
             };
         }
 
-        // --- 长按逻辑 ---
+        // --- 长按逻辑 (目标盘面) ---
         function startPressTimer() {
             if (!state.isPlaying || state.gameWon) return;
             state.longPressTriggered = false;
@@ -996,7 +1018,7 @@
         targetPanel.addEventListener('touchcancel', cancelPressTimer);
 
 
-        // --- 大盘面交互事件 ---
+        // --- 大盘面交互事件 (取消双击) ---
 
         mainArea.addEventListener('mousedown', (e) => {
             if (!state.isPlaying) return;
@@ -1051,11 +1073,6 @@
             clampView(); 
             draw();
         }, { passive: false });
-
-        mainArea.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            checkMatch();
-        });
 
         // 触屏事件
         let touchStartDist = 0;
@@ -1113,16 +1130,6 @@
 
         mainArea.addEventListener('touchend', (e) => {
             state.isDragging = false;
-            
-            if (!state.isPlaying) return;
-
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - state.lastTap;
-            if (tapLength < 300 && tapLength > 0) {
-                checkMatch();
-                if(e.cancelable) e.preventDefault();
-            }
-            state.lastTap = currentTime;
         });
 
         // --- 按钮与UI ---
