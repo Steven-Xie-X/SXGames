@@ -17,8 +17,7 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* 全局彻底纯白背景 */
-            background-color: #ffffff;
+            background-color: #ffffff; 
             display: flex;
             flex-direction: column;
         }
@@ -645,7 +644,7 @@
         };
 
         const state = {
-            gameMode: 'dot', // 'dot' 或 'line'
+            gameMode: 'dot', 
             isPlaying: false,
             currentId: "",
             rng: Math.random,
@@ -677,7 +676,10 @@
             longPressTriggered: false,
             
             timerInterval: null,
-            startTime: 0
+            startTime: 0,
+            
+            // 节流控制
+            renderQueued: false
         };
 
         const mainArea = document.getElementById('main-area');
@@ -813,7 +815,6 @@
         }
 
         function getActiveColors() {
-            // 单色时强制纯黑
             if (state.colorCount === 1) return ['#000000'];
             return CONFIG.colors.slice(0, state.colorCount);
         }
@@ -891,7 +892,7 @@
             pCtx.scale(dpr, dpr);
             
             renderPreview();
-            draw();
+            drawCore(); // 立即绘制一次
         }
 
         function updateZoomValues() {
@@ -1085,8 +1086,8 @@
                 });
             } else {
                 const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
-                // 修复预览图线条过细的问题
-                pCtx.lineWidth = 1.5 / fitZoom; 
+                // 极细线条
+                pCtx.lineWidth = 0.5 / fitZoom; 
                 state.lines.forEach(line => {
                     if (line.hidden) return;
                     
@@ -1115,7 +1116,17 @@
             }
         }
 
+        // 核心渲染节流机制
         function draw() {
+            if (state.renderQueued) return;
+            state.renderQueued = true;
+            requestAnimationFrame(() => {
+                state.renderQueued = false;
+                drawCore();
+            });
+        }
+
+        function drawCore() {
             const dpr = window.devicePixelRatio || 1;
             const width = mainCanvas.width / dpr;
             const height = mainCanvas.height / dpr;
@@ -1176,11 +1187,25 @@
                         }
                     });
                 } else {
-                    // 修复主盘面线条发灰、变粗变细的问题
-                    // 反向补偿缩放比例，保证任何缩放级别下线条屏幕显示宽度固定为 2 像素
-                    ctx.lineWidth = 2 / state.view.zoom; 
+                    // 极细线条
+                    ctx.lineWidth = 0.5 / state.view.zoom; 
+                    
+                    // 视口裁剪优化
+                    const visibleRadius = state.screenRadius / state.view.zoom;
+                    const minX = state.view.x - visibleRadius;
+                    const maxX = state.view.x + visibleRadius;
+                    const minY = state.view.y - visibleRadius;
+                    const maxY = state.view.y + visibleRadius;
+
                     state.lines.forEach(line => {
                         if (line.hidden) return;
+                        
+                        // 判断线段包围盒是否在视口内
+                        if (Math.max(line.x1, line.x2) < minX || Math.min(line.x1, line.x2) > maxX ||
+                            Math.max(line.y1, line.y2) < minY || Math.min(line.y1, line.y2) > maxY) {
+                            return; 
+                        }
+                        
                         ctx.beginPath();
                         ctx.moveTo(line.x1, line.y1);
                         ctx.lineTo(line.x2, line.y2);
@@ -1274,7 +1299,7 @@
                 updateNavButtonsState();
                 updateTargetLabel();
                 renderPreview();
-                draw();
+                drawCore();
             } else {
                 showToast('位置不对，请继续寻找', false);
             }
@@ -1321,7 +1346,7 @@
                     showToast('放大过度，请缩小盘面', false, 1500);
                 } else {
                     state.showAreaHint = true;
-                    draw();
+                    drawCore();
                 }
             }, 1500); 
         }
@@ -1333,7 +1358,7 @@
             }
             if (state.showAreaHint) {
                 state.showAreaHint = false;
-                draw();
+                drawCore();
             }
         }
 
@@ -1359,7 +1384,7 @@
             updateNavButtonsState();
             updateTargetLabel();
             renderPreview();
-            draw();
+            drawCore();
         });
 
         navRight.addEventListener('click', (e) => {
@@ -1369,7 +1394,7 @@
             updateNavButtonsState();
             updateTargetLabel();
             renderPreview();
-            draw();
+            drawCore();
         });
 
         // --- 大盘面交互事件 ---
@@ -1521,7 +1546,7 @@
             e.stopPropagation();
             if (!state.isPlaying || state.gameWon) return;
             state.showHint = !state.showHint;
-            draw();
+            drawCore();
         });
 
         confirmMatchBtn.addEventListener('click', checkMatch);
@@ -1558,7 +1583,7 @@
             
             fitViewToScreen();
             renderPreview();
-            draw();
+            drawCore();
         }
 
         function startGameWithId(id) {
@@ -1604,7 +1629,7 @@
             setTimeout(() => {
                 if (state.isPlaying) {
                     state.showAreaHint = false;
-                    draw();
+                    drawCore();
                 }
             }, 2000);
         }
