@@ -114,7 +114,9 @@
         }
         #info-bar span { font-weight: bold; color: #333; }
         #info-bar div { white-space: nowrap; }
-        .highlight-time { color: #e53935 !important; }
+        
+        /* 成功后时间变绿 */
+        .highlight-time { color: #4CAF50 !important; }
 
         /* 游戏主容器 */
         #game-container {
@@ -152,7 +154,7 @@
             overflow: hidden;
             border: 3px solid #333;
             position: relative;
-            pointer-events: auto; /* 允许接收长按事件 */
+            pointer-events: auto; 
         }
 
         /* 预览区 - 竖屏时固定在底部 */
@@ -164,7 +166,7 @@
             align-items: center;
             flex-shrink: 0;
             z-index: 5;
-            pointer-events: none; /* 容器不接收事件，仅内部target-panel接收 */
+            pointer-events: none; 
         }
 
         /* 横屏/桌面适配 */
@@ -194,13 +196,13 @@
             }
         }
 
-        /* 弹窗通用样式 */
+        /* 弹窗通用样式 - 改为屏幕正中央 */
         .modal {
             display: none;
             position: absolute;
-            top: 100px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%); /* 居中定位 */
             background: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -216,8 +218,6 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 8px;
         }
-        #settings-modal { top: 60px; left: 20px; transform: none; }
-        #help-modal { top: 60px; left: auto; right: 20px; transform: none; }
         #help-modal ul {
             margin-left: 20px;
             font-size: 14px;
@@ -339,9 +339,7 @@
     <header>
         <div class="header-left">
             <button id="fullscreen-btn" class="header-btn">
-                <!-- 全屏图标 -->
                 <svg id="fs-icon-expand" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-                <!-- 退出全屏图标 -->
                 <svg id="fs-icon-shrink" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
             </button>
             <button id="settings-btn" class="header-btn">⚙️</button>
@@ -365,16 +363,14 @@
         <div>点数: <span id="info-dots">--</span></div>
         <div>颜色: <span id="info-colors">--</span></div>
         <div>范围: <span id="info-ratio">--</span></div>
-        <div>时间: <span id="info-time" class="highlight-time">00:00</span></div>
+        <div>时间: <span id="info-time">00:00</span></div>
     </div>
 
     <div id="game-container">
-        <!-- 主画布区 -->
         <div id="main-area">
             <canvas id="main-canvas"></canvas>
         </div>
         
-        <!-- 预览盘面 -->
         <div id="preview-area">
             <div id="target-panel">
                 <canvas id="preview-canvas"></canvas>
@@ -428,7 +424,7 @@
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽大盘面移动；滚轮或双指捏合缩放。</li>
                 <li><strong>大小提示：</strong>刚开始时盘面中央会出现<strong>灰色实线框</strong>（即框选范围大小）。若忘记，可<strong>长按目标盘面（小圆圈） 1.5 秒</strong>显示范围提示，松开消失。</li>
-                <li><strong>验证匹配：</strong>放大时外圈<strong>黑框变红</strong>说明大小匹配。随后<strong>连续双击大盘面</strong>进行位置验证。</li>
+                <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配；若变<strong>红色</strong>则说明放大过度。当外框为绿色时，<strong>连续双击大盘面</strong>进行位置验证。</li>
                 <li><strong>答案提示：</strong>点击右上角的 💡 可以显示目标位置（黑圈），再次点击隐藏。</li>
                 <li><strong>挑战模式：</strong>开启后预览图的颜色将统一变为黑色。</li>
             </ul>
@@ -488,12 +484,10 @@
             lastTap: 0,
             showHint: false,
             
-            // 长按提示控制 (现在专门用于目标盘面)
             showAreaHint: false,
             longPressTimer: null,
             longPressTriggered: false,
             
-            // 计时器
             timerInterval: null,
             startTime: 0
         };
@@ -568,7 +562,7 @@
             stopTimer();
             state.startTime = Date.now();
             infoTime.innerText = '00:00';
-            infoTime.classList.remove('highlight-time');
+            infoTime.classList.remove('highlight-time'); // 移除绿色
             
             state.timerInterval = setInterval(() => {
                 if (!state.isPlaying || state.gameWon) return;
@@ -655,7 +649,6 @@
                 clampView();
             }
             
-            // 预览画布尺寸同步
             const pRect = targetPanel.getBoundingClientRect();
             previewCanvas.width = pRect.width * dpr;
             previewCanvas.height = pRect.height * dpr;
@@ -831,7 +824,17 @@
 
             ctx.clearRect(0, 0, width, height);
 
-            const isZoomMatch = state.isPlaying && Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom < 0.15;
+            let borderColor = '#222'; // 默认黑色
+            if (state.isPlaying) {
+                const currentViewWorldRadius = state.screenRadius / state.view.zoom;
+                const zoomDiff = Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom;
+                
+                if (currentViewWorldRadius < state.targetRadius) {
+                    borderColor = '#E53935'; // 放大过度，红色
+                } else if (zoomDiff < 0.15) {
+                    borderColor = '#4CAF50'; // 合理范围，绿色
+                }
+            }
 
             ctx.beginPath();
             ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
@@ -881,13 +884,12 @@
                     ctx.stroke();
                 }
 
-                // 中央范围提示（灰色实线）
                 if (state.showAreaHint && !state.gameWon) {
                     ctx.beginPath();
                     ctx.arc(state.view.x, state.view.y, state.targetRadius, 0, Math.PI * 2);
                     ctx.lineWidth = 3 / state.view.zoom;
-                    ctx.strokeStyle = '#999999'; // 灰色
-                    ctx.stroke(); // 去掉虚线
+                    ctx.strokeStyle = '#999999'; 
+                    ctx.stroke(); 
                 }
 
                 ctx.restore();
@@ -896,7 +898,7 @@
             ctx.beginPath();
             ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
             ctx.lineWidth = 8; 
-            ctx.strokeStyle = isZoomMatch ? '#E53935' : '#222'; 
+            ctx.strokeStyle = borderColor; 
             ctx.stroke();
         }
 
@@ -905,7 +907,6 @@
 
             const zoomDiff = Math.abs(state.view.zoom - state.targetZoom) / state.targetZoom;
             if (zoomDiff > 0.15) {
-                showToast('大小不匹配，请缩放至外框变红', false);
                 return;
             }
 
@@ -917,7 +918,7 @@
             if (worldDist <= posTolerance) {
                 state.gameWon = true;
                 stopTimer();
-                infoTime.classList.add('highlight-time');
+                infoTime.classList.add('highlight-time'); // 变绿
                 showToast('匹配成功！🎉', true, 3000);
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
                 draw();
@@ -949,7 +950,7 @@
             };
         }
 
-        // --- 长按逻辑 (转移到目标盘面) ---
+        // --- 长按逻辑 ---
         function startPressTimer() {
             if (!state.isPlaying || state.gameWon) return;
             state.longPressTriggered = false;
@@ -960,7 +961,6 @@
                 state.longPressTriggered = true;
                 
                 const currentViewWorldRadius = state.screenRadius / state.view.zoom;
-                // 如果放得太大，绿圈超出了屏幕范围
                 if (currentViewWorldRadius < state.targetRadius) {
                     showToast('放大过度，请缩小盘面', false, 1500);
                 } else {
@@ -981,7 +981,6 @@
             }
         }
 
-        // 绑定长按事件到小盘面
         targetPanel.addEventListener('mousedown', (e) => {
             e.preventDefault();
             startPressTimer();
@@ -997,7 +996,7 @@
         targetPanel.addEventListener('touchcancel', cancelPressTimer);
 
 
-        // --- 大盘面交互事件 (不再包含长按) ---
+        // --- 大盘面交互事件 ---
 
         mainArea.addEventListener('mousedown', (e) => {
             if (!state.isPlaying) return;
@@ -1117,7 +1116,6 @@
             
             if (!state.isPlaying) return;
 
-            // 大盘面只判定双击
             const currentTime = new Date().getTime();
             const tapLength = currentTime - state.lastTap;
             if (tapLength < 300 && tapLength > 0) {
@@ -1199,7 +1197,6 @@
             generateUniqueTarget();
             fitViewToScreen();
             
-            // 启动计时器
             startTimer();
             
             resizeCanvas(); 
