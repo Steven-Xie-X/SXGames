@@ -17,7 +17,8 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f0f0;
+            /* 全局彻底纯白背景 */
+            background-color: #ffffff;
             display: flex;
             flex-direction: column;
         }
@@ -58,20 +59,105 @@
         #settings-btn:hover { transform: rotate(45deg); }
         #help-btn { font-weight: bold; font-family: serif;}
         
+        /* 创意标题样式 */
         #game-title {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
-            color: #333;
             letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        /* 标题单字容器 */
+        .title-char {
+            position: relative;
+            padding: 2px 6px;
+            transition: all 0.3s;
+        }
+
+        /* 红: 点 */
+        #title-dot {
+            color: #FF0000;
+            cursor: pointer;
+        }
+        /* 点模式下的点字样式 */
+        .mode-dot #title-dot {
+            background-color: rgba(255, 0, 0, 0.15);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,0,0,0.6);
+        }
+        .mode-dot #title-dot::before {
+            content: '';
+            position: absolute;
+            top: -6px; left: -6px; right: -6px; bottom: -6px;
+            border: 2px dotted #FF0000;
+            border-radius: 50%;
+            animation: spin 10s linear infinite;
+        }
+
+        /* 黄: 线 */
+        #title-line {
+            color: #FFD700;
+            cursor: pointer;
+        }
+        /* 线模式下的线字样式 */
+        .mode-line #title-line {
+            background-color: rgba(255, 215, 0, 0.15);
+            box-shadow: 0 0 10px rgba(255,215,0,0.6);
+        }
+        .mode-line #title-line::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border: 2px solid #FFD700;
+            border-radius: 4px;
+        }
+
+        /* 蓝: 探 */
+        #title-explore1 { color: #00BFFF; }
+        /* 绿: 微 */
+        #title-explore2 { color: #00FF7F; }
+
+        /* 放大镜背景效果 (探微) */
+        .magnifier-group {
+            position: relative;
+            display: flex;
+            padding: 2px 4px;
+        }
+        .magnifier-group::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: 0; right: 2px; bottom: 0;
+            border: 2px solid rgba(0, 191, 255, 0.5);
+            border-radius: 50%;
+            z-index: -1;
+            box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+        }
+        /* 放大镜的柄 */
+        .magnifier-group::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; right: -6px;
+            width: 12px; height: 4px;
+            background: rgba(0, 191, 255, 0.8);
+            transform: rotate(45deg);
+            border-radius: 2px;
+            z-index: -1;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
         }
 
         /* 操作按钮栏 */
         #control-bar {
             height: 44px;
-            background-color: #fff;
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -140,7 +226,7 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            background-color: #e8e8e8;
+            background-color: #ffffff; 
             min-height: 0;
         }
 
@@ -152,18 +238,20 @@
             overflow: hidden;
             cursor: grab;
             touch-action: none; 
+            background-color: #ffffff; 
         }
         #main-area:active { cursor: grabbing; }
         #main-canvas {
             position: absolute;
             top: 0;
             left: 0;
+            background-color: #ffffff;
         }
 
         /* 预览区结构 */
         #preview-area {
             height: 170px;
-            background-color: #e0e0e0;
+            background-color: #ffffff; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -172,7 +260,6 @@
             gap: 15px;
         }
 
-        /* 包含文字和小圆圈的容器 */
         .target-wrapper {
             display: flex;
             flex-direction: column;
@@ -180,7 +267,6 @@
             gap: 5px;
         }
 
-        /* 目标编号小字 */
         #target-label {
             font-size: 13px;
             font-weight: bold;
@@ -192,11 +278,10 @@
             white-space: nowrap;
         }
 
-        /* 目标预览框 */
         #target-panel {
             width: 140px;
             height: 140px;
-            background: #fff;
+            background: #ffffff;
             border-radius: 50%;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             overflow: hidden;
@@ -228,9 +313,7 @@
             padding: 0;
             outline: none;
         }
-        .nav-btn:active:not(:disabled) {
-            background: #ddd;
-        }
+        .nav-btn:active:not(:disabled) { background: #ddd; }
         .nav-btn:disabled {
             background-color: #e0e0e0;
             color: #999;
@@ -403,7 +486,7 @@
         .toast-error { background: rgba(244, 67, 54, 0.95); }
     </style>
 </head>
-<body>
+<body class="mode-dot">
 
     <header>
         <div class="header-left">
@@ -413,7 +496,17 @@
             </button>
             <button id="settings-btn" class="header-btn">⚙️</button>
         </div>
-        <div id="game-title">点线探微</div>
+        
+        <!-- 创意标题 -->
+        <div id="game-title">
+            <span class="title-char" id="title-dot" title="点击切换点模式">点</span>
+            <span class="title-char" id="title-line" title="点击切换线模式">线</span>
+            <div class="magnifier-group">
+                <span class="title-char" id="title-explore1">探</span>
+                <span class="title-char" id="title-explore2">微</span>
+            </div>
+        </div>
+
         <div class="header-right">
             <button id="hint-btn" class="header-btn">💡</button>
             <button id="help-btn" class="header-btn">?</button>
@@ -433,6 +526,7 @@
         <div>点数: <span id="info-dots">--</span></div>
         <div>颜色: <span id="info-colors">--</span></div>
         <div>范围: <span id="info-ratio">--</span></div>
+        <div id="info-hide-container" style="display:none;">隐藏: <span id="info-hide">15%</span></div>
         <div>目标: <span id="info-targets">--</span></div>
         <div>模式: <span id="info-mode">--</span></div>
         <div>时间: <span id="info-time">00:00</span></div>
@@ -460,8 +554,8 @@
         <div id="settings-modal" class="modal">
             <h3>游戏设置</h3>
             <div class="setting-item">
-                <label>点的总数 (100-5000)</label>
-                <input type="number" id="input-dots" value="1200" min="100" max="5000">
+                <label id="label-dot-count">点的总数 (100-5000)</label>
+                <input type="number" id="input-dots" value="1200" min="10" max="5000">
             </div>
             <div class="setting-item">
                 <label>颜色种类 (1-6)</label>
@@ -474,6 +568,10 @@
             <div class="setting-item">
                 <label>目标数量 (1-10)</label>
                 <input type="number" id="input-target-count" value="1" min="1" max="10">
+            </div>
+            <div class="setting-item" id="hide-ratio-item" style="display:none;">
+                <label>隐藏线条比例 (0%-50%)</label>
+                <input type="number" id="input-line-hide-ratio" value="15" min="0" max="50" step="1">
             </div>
             <!-- 游戏模式开关 -->
             <div class="setting-item">
@@ -504,12 +602,14 @@
         <div id="help-modal" class="modal">
             <h3>操作与规则说明</h3>
             <ul>
+                <li><strong>切换模式：</strong>点击标题的“点”或“线”可以切换模式，切换后盘面会清空。</li>
                 <li><strong>开始游戏：</strong>点击上方按钮生成随机编号题目。</li>
                 <li><strong>移动/缩放：</strong>拖拽大盘面移动；滚轮或双指捏合缩放。</li>
                 <li><strong>大小提示：</strong>刚开始时盘面中央会出现<strong>灰色实线框</strong>。若忘记，可<strong>长按目标盘面（小圆圈） 1.5 秒</strong>显示范围提示，松开消失。</li>
-                <li><strong>切换目标：</strong>当有多个目标时，可通过盘面左右两侧的箭头循环切换查看。</li>
+                <li><strong>切换目标：</strong>当有多个目标时，可通过盘面左右两侧的箭头循环切换。</li>
                 <li><strong>验证匹配：</strong>放大时，外框变<strong>绿色</strong>说明大小匹配，此时点击上方的<strong>“确认”</strong>按钮，只要屏幕中心与<strong>任意一个</strong>未找到的目标匹配即可判定成功。</li>
                 <li><strong>答案提示：</strong>点击右上角的 💡 可以显示当前查看的目标位置（黑圈），再次点击隐藏。</li>
+                <li><strong>线模式特殊说明：</strong>“隐藏”参数表示随机消除的线条百分比，增加观察难度。</li>
             </ul>
         </div>
 
@@ -545,6 +645,7 @@
         };
 
         const state = {
+            gameMode: 'dot', // 'dot' 或 'line'
             isPlaying: false,
             currentId: "",
             rng: Math.random,
@@ -554,9 +655,11 @@
             targetRadiusRatio: 0.15, 
             targetCount: 1,
             isChallengeMode: false,  
+            lineHideRatio: 0.15, 
             
             targetRadius: 300,        
             dots: [],
+            lines: [],               
             targets: [],             
             currentTargetIndex: 0,   
             
@@ -598,6 +701,9 @@
         const helpModal = document.getElementById('help-modal');
         const hintBtn = document.getElementById('hint-btn');
         
+        const titleDot = document.getElementById('title-dot');
+        const titleLine = document.getElementById('title-line');
+
         const startGameBtn = document.getElementById('start-game-btn');
         const confirmMatchBtn = document.getElementById('confirm-match-btn');
         const specifyIdBtn = document.getElementById('specify-id-btn');
@@ -606,10 +712,13 @@
         const confirmIdBtn = document.getElementById('confirm-id-btn');
         const cancelIdBtn = document.getElementById('cancel-id-btn');
 
+        const labelDotCount = document.getElementById('label-dot-count');
         const inputDots = document.getElementById('input-dots');
         const inputColors = document.getElementById('input-colors');
         const inputTargetRatio = document.getElementById('input-target-ratio');
         const inputTargetCount = document.getElementById('input-target-count');
+        const inputLineHideRatio = document.getElementById('input-line-hide-ratio');
+        const hideRatioItem = document.getElementById('hide-ratio-item');
         const applyBtn = document.getElementById('apply-settings');
         const toast = document.getElementById('toast');
         
@@ -617,6 +726,8 @@
         const infoDots = document.getElementById('info-dots');
         const infoColors = document.getElementById('info-colors');
         const infoRatio = document.getElementById('info-ratio');
+        const infoHideContainer = document.getElementById('info-hide-container');
+        const infoHide = document.getElementById('info-hide');
         const infoMode = document.getElementById('info-mode');
         const infoTargets = document.getElementById('info-targets');
         const infoTime = document.getElementById('info-time');
@@ -624,6 +735,36 @@
         const labelSimple = document.getElementById('label-simple');
         const labelChallenge = document.getElementById('label-challenge');
         const modeToggle = document.getElementById('mode-toggle');
+
+        // --- 模式切换逻辑 ---
+        function switchMode(mode) {
+            if (state.gameMode === mode) return;
+            state.gameMode = mode;
+            document.body.className = 'mode-' + mode;
+            
+            if (mode === 'line') {
+                labelDotCount.innerText = '圆周点数 (16-60)';
+                state.dotCount = 30;
+                inputDots.value = 30;
+                inputDots.max = 60;
+                inputDots.min = 16;
+                hideRatioItem.style.display = 'block';
+                infoHideContainer.style.display = 'block';
+            } else {
+                labelDotCount.innerText = '点的总数 (100-5000)';
+                state.dotCount = 1200;
+                inputDots.value = 1200;
+                inputDots.max = 5000;
+                inputDots.min = 100;
+                hideRatioItem.style.display = 'none';
+                infoHideContainer.style.display = 'none';
+            }
+            
+            resetToEmptyBoard();
+        }
+
+        titleDot.addEventListener('click', () => switchMode('dot'));
+        titleLine.addEventListener('click', () => switchMode('line'));
 
         // --- 全屏功能 ---
         fullscreenBtn.addEventListener('click', () => {
@@ -672,6 +813,7 @@
         }
 
         function getActiveColors() {
+            // 单色时强制纯黑
             if (state.colorCount === 1) return ['#000000'];
             return CONFIG.colors.slice(0, state.colorCount);
         }
@@ -755,7 +897,7 @@
         function updateZoomValues() {
             state.targetRadius = CONFIG.worldRadius * state.targetRadiusRatio;
             state.targetZoom = state.screenRadius / state.targetRadius;
-            state.baseZoom = (state.screenRadius * 0.95) / CONFIG.worldRadius;
+            state.baseZoom = state.screenRadius / CONFIG.worldRadius; 
         }
 
         function fitViewToScreen() {
@@ -779,38 +921,72 @@
             }
         }
 
-        function generateDots() {
+        // --- 生成逻辑 ---
+        function generateScene() {
             state.dots = [];
+            state.lines = [];
+            
             const activeColors = getActiveColors();
-            const maxDist = CONFIG.worldRadius - CONFIG.dotRadius * 2;
-            const minDistSq = Math.pow(CONFIG.dotRadius * 2.2, 2); 
-            
-            let attempts = 0;
-            const maxAttempts = state.dotCount * 50; 
-            
-            while (state.dots.length < state.dotCount && attempts < maxAttempts) {
-                attempts++;
-                const angle = state.rng() * Math.PI * 2;
-                const r = Math.sqrt(state.rng()) * maxDist;
-                const x = Math.cos(angle) * r;
-                const y = Math.sin(angle) * r;
+
+            if (state.gameMode === 'dot') {
+                const maxDist = CONFIG.worldRadius - CONFIG.dotRadius * 2;
+                const minDistSq = Math.pow(CONFIG.dotRadius * 2.2, 2); 
                 
-                let overlap = false;
-                for (let d of state.dots) {
-                    const dx = d.x - x;
-                    const dy = d.y - y;
-                    if (dx * dx + dy * dy < minDistSq) {
-                        overlap = true;
-                        break;
+                let attempts = 0;
+                const maxAttempts = state.dotCount * 50; 
+                
+                while (state.dots.length < state.dotCount && attempts < maxAttempts) {
+                    attempts++;
+                    const angle = state.rng() * Math.PI * 2;
+                    const r = Math.sqrt(state.rng()) * maxDist;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    
+                    let overlap = false;
+                    for (let d of state.dots) {
+                        const dx = d.x - x;
+                        const dy = d.y - y;
+                        if (dx * dx + dy * dy < minDistSq) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!overlap) {
+                        state.dots.push({
+                            x: x,
+                            y: y,
+                            color: activeColors[Math.floor(state.rng() * activeColors.length)]
+                        });
                     }
                 }
+            } else {
+                const N = state.dotCount;
+                const circlePoints = [];
+                const R = CONFIG.worldRadius; 
                 
-                if (!overlap) {
-                    state.dots.push({
-                        x: x,
-                        y: y,
-                        color: activeColors[Math.floor(state.rng() * activeColors.length)]
+                for (let i = 0; i < N; i++) {
+                    const angle = (i / N) * Math.PI * 2;
+                    circlePoints.push({
+                        x: Math.cos(angle) * R,
+                        y: Math.sin(angle) * R
                     });
+                }
+                
+                for (let i = 0; i < N; i++) {
+                    for (let j = i + 1; j < N; j++) {
+                        const c = activeColors[Math.floor(state.rng() * activeColors.length)];
+                        const hidden = state.rng() < state.lineHideRatio;
+                        
+                        state.lines.push({
+                            x1: circlePoints[i].x,
+                            y1: circlePoints[i].y,
+                            x2: circlePoints[j].x,
+                            y2: circlePoints[j].y,
+                            color: c,
+                            hidden: hidden
+                        });
+                    }
                 }
             }
         }
@@ -836,47 +1012,15 @@
                 }
                 if (tooClose) continue;
 
-                let dotCount = 0;
-                for(let d of state.dots) {
-                    if (Math.hypot(d.x - tx, d.y - ty) < state.targetRadius) dotCount++;
-                }
-                if (dotCount < 5) { continue; }
-
-                const targetDots = [];
-                for (let d of state.dots) {
-                    if (Math.hypot(d.x - tx, d.y - ty) < state.targetRadius) {
-                        targetDots.push({ x: d.x - tx, y: d.y - ty, color: d.color });
+                if (state.gameMode === 'dot') {
+                    let dotCount = 0;
+                    for(let d of state.dots) {
+                        if (Math.hypot(d.x - tx, d.y - ty) < state.targetRadius) dotCount++;
                     }
+                    if (dotCount < 5) { continue; }
                 }
                 
-                let isUnique = true;
-                const step = Math.max(1, Math.floor(state.dots.length / 300)); 
-                for (let i = 0; i < state.dots.length; i += step) {
-                    const cx = state.dots[i].x;
-                    const cy = state.dots[i].y;
-                    
-                    if (Math.hypot(cx - tx, cy - ty) < state.targetRadius * 2) continue;
-                    
-                    let match = 0;
-                    for (let f of targetDots) {
-                        const ex = cx + f.x;
-                        const ey = cy + f.y;
-                        const found = state.dots.some(d => 
-                            d.color === f.color && 
-                            Math.abs(d.x - ex) < CONFIG.dotRadius && 
-                            Math.abs(d.y - ey) < CONFIG.dotRadius
-                        );
-                        if (found) match++;
-                    }
-                    if (match / targetDots.length > 0.9) {
-                        isUnique = false;
-                        break;
-                    }
-                }
-
-                if (isUnique) {
-                    state.targets.push({ x: tx, y: ty, found: false });
-                }
+                state.targets.push({ x: tx, y: ty, found: false });
             }
             
             while(state.targets.length < state.targetCount) {
@@ -927,18 +1071,41 @@
             pCtx.scale(fitZoom, fitZoom);
             pCtx.translate(-currentTarget.x, -currentTarget.y);
 
-            const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
+            if (state.gameMode === 'dot') {
+                const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
+                state.dots.forEach(dot => {
+                    const dx = dot.x - currentTarget.x;
+                    const dy = dot.y - currentTarget.y;
+                    if (dx*dx + dy*dy < Math.pow(state.targetRadius * 1.5, 2)) {
+                        pCtx.beginPath();
+                        pCtx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
+                        pCtx.fillStyle = useChallengeColor ? '#000000' : dot.color;
+                        pCtx.fill();
+                    }
+                });
+            } else {
+                const useChallengeColor = state.isChallengeMode && state.colorCount > 1;
+                // 修复预览图线条过细的问题
+                pCtx.lineWidth = 1.5 / fitZoom; 
+                state.lines.forEach(line => {
+                    if (line.hidden) return;
+                    
+                    if (line.x1 < currentTarget.x - state.targetRadius * 1.5 &&
+                        line.x2 < currentTarget.x - state.targetRadius * 1.5) return;
+                    if (line.x1 > currentTarget.x + state.targetRadius * 1.5 &&
+                        line.x2 > currentTarget.x + state.targetRadius * 1.5) return;
+                    if (line.y1 < currentTarget.y - state.targetRadius * 1.5 &&
+                        line.y2 < currentTarget.y - state.targetRadius * 1.5) return;
+                    if (line.y1 > currentTarget.y + state.targetRadius * 1.5 &&
+                        line.y2 > currentTarget.y + state.targetRadius * 1.5) return;
 
-            state.dots.forEach(dot => {
-                const dx = dot.x - currentTarget.x;
-                const dy = dot.y - currentTarget.y;
-                if (dx*dx + dy*dy < Math.pow(state.targetRadius * 1.5, 2)) {
                     pCtx.beginPath();
-                    pCtx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
-                    pCtx.fillStyle = useChallengeColor ? '#000000' : dot.color;
-                    pCtx.fill();
-                }
-            });
+                    pCtx.moveTo(line.x1, line.y1);
+                    pCtx.lineTo(line.x2, line.y2);
+                    pCtx.strokeStyle = useChallengeColor ? '#000000' : line.color;
+                    pCtx.stroke();
+                });
+            }
             pCtx.restore();
 
             if (currentTarget.found) {
@@ -980,7 +1147,7 @@
 
             ctx.beginPath();
             ctx.arc(cx, cy, state.screenRadius, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = '#ffffff'; 
             ctx.fill();
 
             if (state.isPlaying) {
@@ -993,26 +1160,40 @@
                 ctx.scale(state.view.zoom, state.view.zoom);
                 ctx.translate(-state.view.x, -state.view.y);
 
-                const visibleRadius = state.screenRadius / state.view.zoom;
-                const minX = state.view.x - visibleRadius;
-                const maxX = state.view.x + visibleRadius;
-                const minY = state.view.y - visibleRadius;
-                const maxY = state.view.y + visibleRadius;
+                if (state.gameMode === 'dot') {
+                    const visibleRadius = state.screenRadius / state.view.zoom;
+                    const minX = state.view.x - visibleRadius;
+                    const maxX = state.view.x + visibleRadius;
+                    const minY = state.view.y - visibleRadius;
+                    const maxY = state.view.y + visibleRadius;
 
-                state.dots.forEach(dot => {
-                    if (dot.x >= minX && dot.x <= maxX && dot.y >= minY && dot.y <= maxY) {
+                    state.dots.forEach(dot => {
+                        if (dot.x >= minX && dot.x <= maxX && dot.y >= minY && dot.y <= maxY) {
+                            ctx.beginPath();
+                            ctx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
+                            ctx.fillStyle = dot.color; 
+                            ctx.fill();
+                        }
+                    });
+                } else {
+                    // 修复主盘面线条发灰、变粗变细的问题
+                    // 反向补偿缩放比例，保证任何缩放级别下线条屏幕显示宽度固定为 2 像素
+                    ctx.lineWidth = 2 / state.view.zoom; 
+                    state.lines.forEach(line => {
+                        if (line.hidden) return;
                         ctx.beginPath();
-                        ctx.arc(dot.x, dot.y, CONFIG.dotRadius, 0, Math.PI * 2);
-                        ctx.fillStyle = dot.color; 
-                        ctx.fill();
-                    }
-                });
+                        ctx.moveTo(line.x1, line.y1);
+                        ctx.lineTo(line.x2, line.y2);
+                        ctx.strokeStyle = line.color;
+                        ctx.stroke();
+                    });
+                }
 
                 state.targets.forEach(t => {
                     if (t.found) {
                         ctx.beginPath();
                         ctx.arc(t.x, t.y, state.targetRadius, 0, Math.PI * 2);
-                        ctx.lineWidth = 6 / state.view.zoom;
+                        ctx.lineWidth = 2 / state.view.zoom; 
                         ctx.strokeStyle = '#4CAF50'; 
                         ctx.stroke();
                     }
@@ -1052,16 +1233,14 @@
             let minDist = Infinity;
             const posTolerance = state.targetRadius * 0.45; 
 
-            // 遍历所有目标，寻找匹配的
             for (let i = 0; i < state.targets.length; i++) {
                 const t = state.targets[i];
-                if (t.found) continue; // 跳过已找到的
+                if (t.found) continue; 
 
                 const worldDx = state.view.x - t.x;
                 const worldDy = state.view.y - t.y;
                 const worldDist = Math.hypot(worldDx, worldDy);
 
-                // 如果距离在容差内，且是目前离中心最近的未找到目标
                 if (worldDist <= posTolerance && worldDist < minDist) {
                     minDist = worldDist;
                     bestMatchTarget = { index: i, data: t };
@@ -1080,7 +1259,6 @@
                     showToast('全部找到，游戏通关！🎉', true);
                 } else {
                     showToast('找到目标！请点击继续', true);
-                    // 自动切换到下一个未找到的目标
                     let nextIdx = (state.currentTargetIndex + 1) % state.targetCount;
                     for(let i=0; i<state.targetCount; i++) {
                         if (!state.targets[nextIdx].found) {
@@ -1357,6 +1535,32 @@
             return result;
         }
 
+        function resetToEmptyBoard() {
+            state.isPlaying = false;
+            state.gameWon = false;
+            state.dots = [];
+            state.lines = [];
+            state.targets = [];
+            
+            stopTimer();
+            infoTime.innerText = '00:00';
+            infoTime.classList.remove('highlight-time');
+            
+            infoId.innerText = '--';
+            infoDots.innerText = '--';
+            infoColors.innerText = '--';
+            infoRatio.innerText = '--';
+            infoHide.innerText = '--';
+            infoMode.innerText = '--';
+            infoTargets.innerText = '--';
+            
+            startGameBtn.innerText = '开始游戏';
+            
+            fitViewToScreen();
+            renderPreview();
+            draw();
+        }
+
         function startGameWithId(id) {
             state.isPlaying = true;
             state.gameWon = false;
@@ -1372,7 +1576,7 @@
             }
             updateModeSwitchUI();
 
-            const seedStr = `${id}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.targetCount}_${state.isChallengeMode ? 'c' : 's'}`;
+            const seedStr = `${id}_${state.gameMode}_${state.dotCount}_${state.colorCount}_${state.targetRadiusRatio.toFixed(3)}_${state.targetCount}_${state.lineHideRatio.toFixed(2)}_${state.isChallengeMode ? 'c' : 's'}`;
             const seedFunc = xmur3(seedStr);
             state.rng = mulberry32(seedFunc());
 
@@ -1380,12 +1584,13 @@
             infoDots.innerText = state.dotCount;
             infoColors.innerText = state.colorCount;
             infoRatio.innerText = (state.targetRadiusRatio * 100).toFixed(1) + '%';
+            infoHide.innerText = (state.lineHideRatio * 100).toFixed(0) + '%';
             infoMode.innerText = state.isChallengeMode ? '挑战' : '简单';
             
             startGameBtn.innerText = '新的开始';
 
             updateZoomValues();
-            generateDots();
+            generateScene(); 
             generateUniqueTargets();
             updateTargetInfo();
             updateNavButtonsState();
@@ -1437,7 +1642,15 @@
         });
 
         applyBtn.addEventListener('click', () => {
-            state.dotCount = parseInt(inputDots.value) || 1200;
+            let countVal = parseInt(inputDots.value);
+            if (isNaN(countVal)) countVal = 1200;
+            
+            if (state.gameMode === 'line') {
+                state.dotCount = Math.max(16, Math.min(60, countVal));
+            } else {
+                state.dotCount = Math.max(100, Math.min(5000, countVal));
+            }
+
             state.colorCount = parseInt(inputColors.value) || 3;
             
             let ratioVal = parseFloat(inputTargetRatio.value);
@@ -1448,7 +1661,11 @@
             state.targetCount = parseInt(inputTargetCount.value) || 1;
             state.targetCount = Math.max(1, Math.min(10, state.targetCount));
 
-            state.dotCount = Math.max(100, Math.min(5000, state.dotCount));
+            let hideVal = parseFloat(inputLineHideRatio.value);
+            if (isNaN(hideVal)) hideVal = 15;
+            hideVal = Math.max(0, Math.min(50, hideVal));
+            state.lineHideRatio = hideVal / 100;
+
             state.colorCount = Math.max(1, Math.min(CONFIG.colors.length, state.colorCount));
             
             if (state.colorCount === 1) {
@@ -1459,13 +1676,12 @@
             inputColors.value = state.colorCount;
             inputTargetRatio.value = ratioVal;
             inputTargetCount.value = state.targetCount;
+            inputLineHideRatio.value = hideVal;
 
             updateModeSwitchUI();
             settingsModal.style.display = 'none';
 
-            if (state.isPlaying) {
-                startGameWithId(state.currentId);
-            }
+            resetToEmptyBoard();
         });
 
         window.addEventListener('resize', () => {
@@ -1473,7 +1689,8 @@
         });
 
         // 初始化
-        updateModeSwitchUI();
+        switchMode('dot'); 
+        resetToEmptyBoard();
         resizeCanvas();
     </script>
 </body>
