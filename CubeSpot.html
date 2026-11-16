@@ -1526,7 +1526,7 @@
         }
 
         function showConfirm(msg, onOk) {
-            confirmText.textContent = msg;
+            confirmText.innerHTML = msg;
             confirmAction = onOk;
             confirmModal.classList.remove('hidden');
         }
@@ -1923,20 +1923,29 @@
                 const practice = params.get('practice') === '1';
 
                 if (!isNaN(size) && size >= 5 && size <= 200 && !isNaN(colors) && colors >= 4 && colors <= 16 && diff) {
-                    settingsCube.size = size;
-                    settingsCube.diffInput = diff;
-                    settingsCube.colorCount = colors;
-                    settingsCube.isPractice = practice;
+                    const msg = `是否尝试挑战分享的题目？<br><br>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin: 0 auto; font-size: 15px; font-weight: normal; text-align: left; width: max-content; line-height: 1.6;">
+                        <div>题号：${id}</div>
+                        <div>大小：${size}*${size}</div>
+                        <div>数量：${diff}个</div>
+                        <div>颜色：${colors}种</div>
+                        <div>模式：${practice ? '练习' : '挑战'}</div>
+                    </div>`;
                     
-                    setSizeInput.value = size;
-                    setDiffInput.value = diff;
-                    setColorCountInput.value = colors;
-                    setPracticeInput.checked = practice;
-                    updatePlayModeText();
+                    showConfirm(msg, () => {
+                        settingsCube.size = size;
+                        settingsCube.diffInput = diff;
+                        settingsCube.colorCount = colors;
+                        settingsCube.isPractice = practice;
+                        
+                        setSizeInput.value = size;
+                        setDiffInput.value = diff;
+                        setColorCountInput.value = colors;
+                        setPracticeInput.checked = practice;
+                        updatePlayModeText();
 
-                    setTimeout(() => {
                         executeStartGame(id);
-                    }, 200);
+                    });
                 }
             }
         }
