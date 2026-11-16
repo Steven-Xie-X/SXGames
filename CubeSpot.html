@@ -60,6 +60,7 @@
         #answer-btn { right: 100px; display: none; }
         #help-btn { right: 56px; }
         #lock-btn { right: 12px; }
+        #share-btn { right: 12px; top: 56px; }
 
         /* 顶部信息区 */
         .top-ui {
@@ -243,7 +244,7 @@
             padding: 0;
             margin: 0;
             cursor: grab;
-            aspect-ratio: 1 / 1; /* 强制画布本身保持正方形比例 */
+            aspect-ratio: 1 / 1;
         }
         .main-canvas:active { cursor: grabbing; }
 
@@ -437,6 +438,7 @@
     <div class="fixed-btn" id="answer-btn" title="查看答案">💡</div>
     <div class="fixed-btn" id="help-btn" title="帮助">?</div>
     <div class="fixed-btn" id="lock-btn" title="锁定界面">🔓</div>
+    <div class="fixed-btn" id="share-btn" title="分享">🔗</div>
 
     <!-- 设置面板 -->
     <div id="settings-modal" class="modal-overlay hidden">
@@ -496,10 +498,11 @@
                     <li><strong>寻找不同：</strong>直接点击左右任意一面墙上的不同处（点击左墙或右墙均有效）。</li>
                     <li><strong>全屏：</strong>点击左上角图标可切换全屏，全屏模式下支持<strong>双指捏合缩放、单指拖动</strong>来观察细节。</li>
                     <li><strong>坐标查询：</strong>练习模式下，点击左上角坐标图标（📍）可查看已选格子的精确坐标（先行后列，如(5,6)）。</li>
-                    <li><strong>复盘功能：</strong>游戏通关后，可点击弹窗中的“复盘”按钮从头查看本局答案。进入复盘模式后，点击盘面、或点击信息栏下方的“前进/撤回”按钮可以一步步查看不同之处（变黑后再次点击会还原），连续双击盘面可以撤回上一步。大盘面中会自动聚焦到答案所在的10x10区域。</li>
+                    <li><strong>复盘功能：</strong>游戏通关后，需点击屏幕任意处关闭统计弹窗并自动进入复盘模式（按作答先后顺序）。点击盘面、或点击信息栏下方的“前进/撤回”按钮可以一步步查看不同之处，连续双击盘面可以撤回上一步。大盘面中会自动聚焦到答案所在的10x10区域。</li>
                     <li><strong>设置：</strong>点击左上角齿轮图标调整盘面大小、颜色种类及挑战/练习模式。</li>
                     <li><strong>帮助：</strong>点击右上角问号图标查看本规则。</li>
                     <li><strong>锁定：</strong>点击右上角锁图标可锁定屏幕，防止误触（锁定后无法缩放和滑动）。</li>
+                    <li><strong>分享：</strong>点击右上角分享图标（🔗）可复制当前题目的链接，发送给好友进行挑战。</li>
                     <li><strong>查看答案：</strong>练习模式下，右上角会显示灯泡图标，点击可将所有不同处标黑。</li>
                 </ul>
             </div>
@@ -603,6 +606,7 @@
             grid: [], found: 0, remaining: 0, mistakes: 0, isPlaying: false,
             isPractice: false, 
             selectedIds: [], 
+            foundOrder: [], // 记录玩家点击的先后顺序
             isShowingAnswer: false,
             hasActiveGame: false,
             zoom: 1,
@@ -711,6 +715,8 @@
         
         const toastOverlay = document.getElementById('toast-overlay');
         const toastText = document.getElementById('toast-text');
+        
+        const shareBtn = document.getElementById('share-btn');
 
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const lockBtn = document.getElementById('lock-btn');
@@ -760,7 +766,6 @@
             
             const dpr = window.devicePixelRatio || 1;
             
-            // 强制正方形物理尺寸和 CSS 尺寸，防止挤压拉伸
             const physicalSize = Math.floor(gridSize * dpr);
             const cssSize = physicalSize / dpr;
             
@@ -952,7 +957,6 @@
 
             const cols = settingsCube.size;
             
-            // 使用纯物理像素均分，不取整，确保绝对正方形
             const pCell = physicalW / cols; 
             const lineWidth = pCell > 3 ? Math.max(1, Math.floor(1 * dpr)) : 0;
             const fillW = pCell - lineWidth;
@@ -1271,18 +1275,50 @@
         coordClose.addEventListener('click', () => coordModal.classList.add('hidden'));
 
         // ==========================================
+        // 分享功能
+        // ==========================================
+        shareBtn.addEventListener('click', () => {
+            const levelId = levelIdDisplay.textContent;
+            if (levelId === '------') {
+                showToast('请先开始一局游戏后再分享', false);
+                return;
+            }
+
+            const baseUrl = window.location.href.split('?')[0];
+            const params = new URLSearchParams();
+            params.set('id', levelId);
+            params.set('size', settingsCube.size);
+            params.set('diff', settingsCube.diffInput);
+            params.set('colors', settingsCube.colorCount);
+            params.set('practice', settingsCube.isPractice ? '1' : '0');
+            
+            const shareUrl = `${baseUrl}?${params.toString()}`;
+
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('链接已复制，快去分享吧！', true);
+            }).catch(() => {
+                showToast('复制失败，请手动复制链接：<br>' + shareUrl, false, 5000);
+            });
+        });
+
+        // ==========================================
         // 复盘逻辑
         // ==========================================
         window.initReview = function() {
             toastOverlay.classList.add('hidden');
+            if (state.isReviewing) return;
             state.isReviewing = true;
             state.isPlaying = false;
             state.reviewTargets = [];
             
-            state.grid.forEach(b => {
-                if (b.isDifferent) state.reviewTargets.push(b.id);
-            });
-            state.reviewTargets.sort((a, b) => a - b);
+            if (state.foundOrder && state.foundOrder.length > 0) {
+                state.reviewTargets = [...state.foundOrder];
+            } else {
+                state.grid.forEach(b => {
+                    if (b.isDifferent) state.reviewTargets.push(b.id);
+                });
+                state.reviewTargets.sort((a, b) => a - b);
+            }
             
             state.reviewStep = 0;
             state.currentBlackId = null;
@@ -1409,6 +1445,7 @@
             state.hasActiveGame = false;
             state.isShowingAnswer = false;
             state.selectedIds = [];
+            state.foundOrder = [];
             state.zoom = 1;
             state.panX = 0;
             state.panY = 0;
@@ -1449,7 +1486,6 @@
             
             state.grid = [];
             
-            // 清空画布，防止残留旧尺寸的刻度线
             ctxLeft.clearRect(0, 0, canvasLeft.width, canvasLeft.height);
             ctxRight.clearRect(0, 0, canvasRight.width, canvasRight.height);
             ctxAxisTopLeft.clearRect(0, 0, axisTopLeft.width, axisTopLeft.height);
@@ -1457,7 +1493,6 @@
             ctxAxisLeftLeft.clearRect(0, 0, axisLeftLeft.width, axisLeftLeft.height);
             ctxAxisLeftRight.clearRect(0, 0, axisLeftRight.width, axisLeftRight.height);
             
-            // 延时等待DOM排版更新后重绘
             setTimeout(resizeCanvas, 50);
             
             updateUI();
@@ -1529,6 +1564,8 @@
             state.reviewTargets = [];
             state.reviewStep = 0;
             state.currentBlackId = null;
+            state.foundOrder = [];
+            
             reviewControls.style.display = 'none';
             document.querySelector('.mistake-container').style.display = '';
 
@@ -1632,14 +1669,29 @@
                         state.isPlaying = false;
                         state.hasActiveGame = false;
                         stopTimer();
-                        const reviewHtml = `<div style="margin-top:20px;"><button class="btn-confirm" onclick="initReview()" style="padding: 8px 24px;">复盘</button></div>`;
-                        showToast(`练习成功！全部找对！<br>题号：${levelIdDisplay.textContent}<br>用时：${timerDisplay.textContent}${reviewHtml}`, true, false);
+                        state.foundOrder = [...state.selectedIds];
+                        
+                        const statsHtml = `
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin-top: 15px; font-size: 15px; font-weight: normal; text-align: left; width: max-content; margin-left: auto; margin-right: auto;">
+                                <div>大小：${settingsCube.size}*${settingsCube.size}</div>
+                                <div>数量：${state.diffCount}个</div>
+                                <div>颜色：${settingsCube.colorCount}种</div>
+                                <div>模式：${settingsCube.isPractice ? '练习' : '挑战'}</div>
+                            </div>
+                        `;
+                        
+                        const msg = `练习成功！全部找对！<br>题号：${levelIdDisplay.textContent}<br>用时：${timerDisplay.textContent}${statsHtml}`;
+                        
+                        showToast(msg, true, 0, () => {
+                            initReview();
+                        });
                     }
                 }
             } else {
                 if (blockData.isDifferent) {
                     if (!blockData.found) {
                         blockData.found = true;
+                        state.foundOrder.push(blockData.id);
                         state.found++;
                         state.remaining--;
                         
@@ -1650,8 +1702,21 @@
                             state.isPlaying = false;
                             state.hasActiveGame = false;
                             stopTimer();
-                            const reviewHtml = `<div style="margin-top:20px;"><button class="btn-confirm" onclick="initReview()" style="padding: 8px 24px;">复盘</button></div>`;
-                            showToast(`恭喜找出了所有不同！<br>题号：${levelIdDisplay.textContent}<br>失误：${state.mistakes} 次<br>用时：${timerDisplay.textContent}${reviewHtml}`, true, false);
+                            
+                            const statsHtml = `
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin-top: 15px; font-size: 15px; font-weight: normal; text-align: left; width: max-content; margin-left: auto; margin-right: auto;">
+                                    <div>大小：${settingsCube.size}*${settingsCube.size}</div>
+                                    <div>数量：${state.diffCount}个</div>
+                                    <div>颜色：${settingsCube.colorCount}种</div>
+                                    <div>模式：${settingsCube.isPractice ? '练习' : '挑战'}</div>
+                                </div>
+                            `;
+                            
+                            const msg = `恭喜找出了所有不同！<br>题号：${levelIdDisplay.textContent}<br>失误：${state.mistakes} 次<br>用时：${timerDisplay.textContent}${statsHtml}`;
+                            
+                            showToast(msg, true, 0, () => {
+                                initReview();
+                            });
                         }
                     }
                 } else {
@@ -1672,7 +1737,7 @@
             mistakeEl.textContent = state.mistakes;
         }
         
-        function showToast(text, isSuccess = true, autoHide = true) {
+        function showToast(text, isSuccess = true, autoHideDuration = 1500, onClose = null) {
             toastText.innerHTML = text;
             toastText.style.borderColor = isSuccess ? 'var(--success-glow)' : 'var(--text-mistake)';
             toastText.style.boxShadow = isSuccess ? '0 0 30px rgba(74, 222, 128, 0.3)' : '0 0 30px rgba(248, 113, 113, 0.3)';
@@ -1681,17 +1746,21 @@
             
             if (toastDismissHandler) document.removeEventListener('click', toastDismissHandler);
             
+            let isClosed = false;
             toastDismissHandler = () => {
+                if (isClosed) return;
+                isClosed = true;
                 toastOverlay.classList.add('hidden');
                 document.removeEventListener('click', toastDismissHandler);
                 clearTimeout(toastTimeout);
                 toastDismissHandler = null;
+                if (onClose) onClose();
             };
             
             setTimeout(() => document.addEventListener('click', toastDismissHandler), 10);
             clearTimeout(toastTimeout);
-            if (autoHide) {
-                toastTimeout = setTimeout(toastDismissHandler, 1500);
+            if (autoHideDuration > 0) {
+                toastTimeout = setTimeout(toastDismissHandler, autoHideDuration);
             }
         }
 
@@ -1840,6 +1909,39 @@
         });
 
         resetBoardToEmpty();
+
+        // ==========================================
+        // URL 参数解析（用于分享链接）
+        // ==========================================
+        function initFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('id')) {
+                const id = params.get('id');
+                const size = parseInt(params.get('size'));
+                const diff = params.get('diff');
+                const colors = parseInt(params.get('colors'));
+                const practice = params.get('practice') === '1';
+
+                if (!isNaN(size) && size >= 5 && size <= 200 && !isNaN(colors) && colors >= 4 && colors <= 16 && diff) {
+                    settingsCube.size = size;
+                    settingsCube.diffInput = diff;
+                    settingsCube.colorCount = colors;
+                    settingsCube.isPractice = practice;
+                    
+                    setSizeInput.value = size;
+                    setDiffInput.value = diff;
+                    setColorCountInput.value = colors;
+                    setPracticeInput.checked = practice;
+                    updatePlayModeText();
+
+                    setTimeout(() => {
+                        executeStartGame(id);
+                    }, 200);
+                }
+            }
+        }
+
+        initFromUrl();
     </script>
 </body>
 </html>
