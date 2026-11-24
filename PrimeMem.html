@@ -15,32 +15,39 @@
       radial-gradient(1000px 500px at 100% 0%, #cffafe 0%, transparent 50%),
       #f6f7fb;
     min-height:100vh;
-    padding:28px 16px 60px;
+    padding:20px 12px 60px;
     display:flex;
     justify-content:center;
+    align-items:flex-start;
   }
   .app{width:100%;max-width:700px}
 
   /* ---------- 头部 ---------- */
-  header{text-align:center;margin-bottom:22px}
+  header{text-align:center;margin-bottom:20px}
   h1{
-    font-size:26px;margin:0 0 6px;letter-spacing:-.5px;
+    font-size:24px;margin:0 0 6px;letter-spacing:-.5px;
     background:linear-gradient(120deg,#4f46e5,#0ea5e9);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .sub{margin:0;font-size:13px;color:#64748b}
   .sub b{color:#4f46e5}
 
-  /* ---------- 标签页 ---------- */
+  /* ---------- 标签页 (修复横向拖动) ---------- */
   .tabs{
     display:flex;gap:6px;background:#fff;padding:6px;border-radius:16px;
     box-shadow:0 10px 30px -18px rgba(15,23,42,.45),0 1px 3px rgba(15,23,42,.05);
-    margin-bottom:18px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    margin-bottom:18px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    flex-wrap:nowrap;
+    scrollbar-width:none;
+    width: 100%;
   }
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{
-    flex:1 0 auto;white-space:nowrap;border:0;background:transparent;
-    padding:10px 14px;border-radius:11px;font:inherit;font-size:13.5px;font-weight:600;
+    flex:0 0 auto;
+    white-space:nowrap;border:0;background:transparent;
+    padding:10px 16px;border-radius:11px;font:inherit;font-size:13.5px;font-weight:600;
     color:#64748b;cursor:pointer;transition:.2s;
   }
   .tabs button:hover{color:#334155;background:#f8fafc}
@@ -51,7 +58,7 @@
 
   /* ---------- 卡片基础 ---------- */
   .card{
-    background:#fff;border-radius:22px;padding:24px;
+    background:#fff;border-radius:22px;padding:20px;
     box-shadow:0 24px 48px -32px rgba(15,23,42,.5),0 2px 8px rgba(15,23,42,.04);
     animation:pop .3s ease; position:relative; overflow:hidden;
   }
@@ -64,15 +71,15 @@
 
   /* ---------- 模式一：闪电判断 ---------- */
   .num-display{
-    font-size:clamp(64px,19vw,112px);font-weight:800;line-height:1.05;
-    text-align:center;padding:22px 0 26px;font-variant-numeric:tabular-nums;
+    font-size:clamp(56px,18vw,96px);font-weight:800;line-height:1.05;
+    text-align:center;padding:20px 0;font-variant-numeric:tabular-nums;
     background:linear-gradient(135deg,#4338ca,#0ea5e9);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     user-select:none;
   }
   .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .choice-btn{
-    padding:18px 12px;border-radius:16px;border:2px solid transparent;
+    padding:16px 12px;border-radius:16px;border:2px solid transparent;
     font:inherit;font-size:17px;font-weight:700;cursor:pointer;transition:.15s;
   }
   .choice-btn:active{transform:scale(.97)}
@@ -94,7 +101,7 @@
     background:linear-gradient(90deg,#6366f1,#0ea5e9);transition:width .3s linear;
   }
 
-  /* ---------- 模式二：质数雨 (按20格平滑下落重写) ---------- */
+  /* ---------- 模式二：质数雨 ---------- */
   .rain-container{
     background:#0f172a; border-radius:18px; overflow:hidden; display:flex; flex-direction:column;
     box-shadow:inset 0 4px 20px rgba(0,0,0,0.5);
@@ -103,13 +110,13 @@
     padding:12px 16px; display:flex; justify-content:space-between; color:#cbd5e1;
     font-size:14px; font-weight:600; background:#1e293b; z-index:10;
   }
-  .fall-area{ height:480px; position:relative; overflow:hidden; background:#0f172a; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b;}
+  .fall-area{ height:min(480px, 60vh); position:relative; overflow:hidden; background:#0f172a; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b;}
   .brick{
     position:absolute; width:90%; left:5%; height:24px; border-radius:6px;
     background:#334155; border:1px solid #475569;
     display:flex; align-items:center; justify-content:center;
     color:#fff; font-weight:bold; font-size:14px; box-sizing:border-box;
-    transition: top 0.9s linear; /* 默认1秒下落1格 */
+    transition: top 0.9s linear; 
   }
   .brick.active{
     background:linear-gradient(135deg,#f97316,#ea580c); border-color:#fb923c;
@@ -124,13 +131,22 @@
   .rain-btn.prime{ background:linear-gradient(135deg,#10b981,#059669); border-radius:0 0 0 18px; }
   .rain-btn.comp{ background:linear-gradient(135deg,#f43f5e,#e11d48); border-radius:0 0 18px 0; }
 
-  /* ---------- 模式三：打地鼠 ---------- */
-  .whack-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+  /* ---------- 模式三：打地鼠 (修复盘面过大) ---------- */
+  .whack-grid{ 
+    display:grid; 
+    grid-template-columns:repeat(3,1fr); 
+    gap:10px; 
+    margin:20px auto; 
+    max-width:360px; 
+    width:100%; 
+  }
   .hole{
     aspect-ratio:1; border-radius:50%; background:#e2e8f0;
     display:flex; align-items:center; justify-content:center;
-    font-size:26px; font-weight:800; cursor:default; transition:all 0.2s;
+    font-size:clamp(18px, 5vw, 28px);
+    font-weight:800; cursor:default; transition:all 0.2s;
     box-shadow:inset 0 6px 12px rgba(0,0,0,0.15); user-select:none; color:transparent;
+    width: 100%;
   }
   .hole.active{ cursor:pointer; background:#f8fafc; border:3px solid #cbd5e1; color:#0f172a; }
   .hole.active.pop-up{ animation:popUp 0.3s ease-out; }
@@ -141,20 +157,22 @@
   .hole.miss{ background:#fff1f2; border-color:#fda4af; color:#e11d48; animation:shake 0.3s; }
 
   /* ---------- 模式四：质数拆弹 ---------- */
-  .bomb-num{ font-size:56px; font-weight:800; color:#e11d48; margin:16px 0; font-variant-numeric:tabular-nums; }
+  .bomb-num{ font-size:clamp(42px, 12vw, 56px); font-weight:800; color:#e11d48; margin:16px 0; font-variant-numeric:tabular-nums; }
   .bomb-opts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
   /* ---------- 模式五：数字猎手 ---------- */
   .hunt-grid{
     display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
-    margin:16px auto 0; max-width:420px;
+    margin:16px auto 0; max-width:400px; width:100%;
   }
-  @media(min-width:540px){ .hunt-grid{grid-template-columns:repeat(5,1fr);max-width:480px} }
+  @media(min-width:540px){ 
+    .hunt-grid{grid-template-columns:repeat(5,1fr);max-width:480px;} 
+  }
   .cell{
     aspect-ratio:1; display:flex; align-items:center; justify-content:center;
     border-radius:14px; border:2px solid #e2e8f0; background:#fff;
-    font:inherit; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
-    color:#334155; cursor:pointer; transition:.15s;
+    font:inherit; font-size:clamp(14px, 4vw, 18px); font-weight:700; font-variant-numeric:tabular-nums;
+    color:#334155; cursor:pointer; transition:.15s; width: 100%;
   }
   .cell:hover:not(.found){ border-color:#c7d2fe; transform:translateY(-2px); }
   .cell.found{ background:#ecfdf5; border-color:#6ee7b7; color:#059669; cursor:default; }
@@ -164,17 +182,17 @@
   .hint b{ color:#6366f1; }
 
   /* ---------- 模式六：质数填空 ---------- */
-  .fill-seq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0}
+  .fill-seq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:20px 0}
   .seq-item{
-    padding:11px 15px;border-radius:12px;background:#f1f5f9;color:#334155;
-    font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;
+    padding:10px 14px;border-radius:12px;background:#f1f5f9;color:#334155;
+    font-size:clamp(15px, 4vw, 18px);font-weight:700;font-variant-numeric:tabular-nums;
   }
-  .seq-item.blank{background:#eef2ff;border:2px dashed #a5b4fc;color:#6366f1;padding:9px 13px}
-  .seq-item.reveal{background:#ecfdf5;border:2px solid #6ee7b7;color:#059669;padding:9px 13px}
+  .seq-item.blank{background:#eef2ff;border:2px dashed #a5b4fc;color:#6366f1;padding:8px 12px}
+  .seq-item.reveal{background:#ecfdf5;border:2px solid #6ee7b7;color:#059669;padding:8px 12px}
   .options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .option{
-    padding:16px;border-radius:14px;border:2px solid #e2e8f0;background:#fff;
-    font:inherit;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;
+    padding:14px;border-radius:14px;border:2px solid #e2e8f0;background:#fff;
+    font:inherit;font-size:clamp(16px, 4vw, 18px);font-weight:700;font-variant-numeric:tabular-nums;
     color:#334155;cursor:pointer;transition:.15s;
   }
   .option:hover:not(:disabled){border-color:#c7d2fe;transform:translateY(-2px)}
@@ -199,7 +217,7 @@
   /* ---------- 模式八：倍数技巧 ---------- */
   .tip-card{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:12px; overflow:hidden; transition: 0.2s; }
   .tip-card:hover{ border-color:#cbd5e1; box-shadow: 0 4px 12px -4px rgba(0,0,0,0.05); }
-  .tip-header{ padding:16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:700; color:#334155; font-size:15px; user-select:none; }
+  .tip-header{ padding:16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:700; color:#334155; font-size:14px; user-select:none; }
   .tip-header .icon{ transition:transform 0.3s; color:#94a3b8; font-size:12px; }
   .tip-card.open .tip-header .icon{ transform:rotate(180deg); }
   .tip-content{ display:none; padding:0 16px 16px; font-size:13.5px; color:#475569; line-height:1.7; border-top:1px solid #e2e8f0; }
@@ -286,7 +304,7 @@
   function randomComposite() {
     let n;
     if (Math.random() < 0.4) {
-      do { n = 3 + rnd(996); } while (isPrime[n] || n % 2 === 0); // 生成奇数合数增加难度
+      do { n = 3 + rnd(996); } while (isPrime[n] || n % 2 === 0);
     } else {
       do { n = 2 + rnd(998); } while (isPrime[n]);
     }
@@ -441,8 +459,8 @@
   /* ================= 模式二：质数雨 (真正的20格平滑下落) ================= */
   function renderRain() {
     let score = 0, lives = 3, gameOver = false;
-    const BRICK_H = 24; // 每格24px
-    const MAX_Y = 20;   // 共20格
+    const BRICK_H = 24;
+    const MAX_Y = 20;
     
     stage.innerHTML = `
       <div class="card" style="padding:0;">
@@ -462,7 +480,6 @@
     let bricks = [];
     let nextId = 0;
 
-    // 添加一个新砖块
     function addBrick(startY) {
       const val = Math.random() < 0.6 ? pick(PRIMES) : randomComposite();
       const isP = isPrime[val];
@@ -476,25 +493,21 @@
       bricks.push(b);
     }
 
-    // 初始化：生成15个砖块，最底部的y=0(顶格)，依次向上(y=-1, -2...)
     for(let i = 0; i < 15; i++) {
       addBrick(-i);
     }
 
     function updateUI() {
-      // 按照 y 坐标从小到大排序，最底部（y最大）的在最后
       bricks.sort((a,b) => a.y - b.y);
       
       bricks.forEach((b, i) => {
         b.el.style.top = (b.y * BRICK_H) + 'px';
-        // 如果超出屏幕上方太远，暂时隐藏优化性能
         if (b.y < -5) {
           b.el.style.display = 'none';
         } else {
           b.el.style.display = 'flex';
         }
 
-        // 只有最底部的砖块（排在最后，且未超出底端）才显示数字
         if (i === bricks.length - 1 && b.y < MAX_Y) {
           b.el.classList.add('active');
           b.el.textContent = b.value;
@@ -508,19 +521,16 @@
     function tick() {
       if (gameOver) return;
       
-      // 整体匀速下落 1 格
       bricks.forEach(b => {
         b.y += 1;
         b.el.style.transition = 'top 0.9s linear';
       });
 
-      // 检查是否碰到底端
       if (bricks.some(b => b.y >= MAX_Y)) {
         endGame("砖块碰到底端！");
         return;
       }
 
-      // 保持队列长度足够（比如15个），如果不够在顶部补一个
       if (bricks.length < 15) {
         const minY = bricks.length > 0 ? Math.min(...bricks.map(b => b.y)) : 0;
         addBrick(minY - 1);
@@ -532,20 +542,17 @@
     function judge(sayPrime) {
       if (gameOver) return;
       
-      // 排最后的是y最大的，即最底部的砖块
       const bottomBrick = bricks[bricks.length - 1];
       if (!bottomBrick || bottomBrick.y >= MAX_Y) return;
 
       if (bottomBrick.isPrime === sayPrime) {
-        // 答对消除
         score += 1;
         document.getElementById('rScore').textContent = score;
         
         bottomBrick.el.remove();
-        bricks.pop(); // 移除这个砖块
-        updateUI();   // 原先在上面的砖块现在变成了最底部，继续以1秒1格的速度下落
+        bricks.pop();
+        updateUI();
       } else {
-        // 答错
         lives--;
         document.getElementById('rLives').textContent = lives;
         if (lives <= 0) {
@@ -553,13 +560,11 @@
           return;
         }
 
-        // 整体向下瞬移 5 格 (使用 0.2s 的快速坠落动画)
         bricks.forEach(b => {
           b.y += 5;
           b.el.style.transition = 'top 0.2s ease-in';
         });
 
-        // 立刻检查是否超出底端
         if (bricks.some(b => b.y >= MAX_Y)) {
           endGame("砖块超出底端！");
           return;
@@ -667,7 +672,7 @@
       if (!hole || gameOver) return;
       
       const isP = hole.dataset.isPrime === 'true';
-      hole.className = 'hole'; // 瞬间移除激活状态，防止重复点击
+      hole.className = 'hole';
       hole.textContent = '';
       
       if (isP) {
