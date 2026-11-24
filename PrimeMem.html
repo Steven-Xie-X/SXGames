@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>质数记忆挑战 · 1000以内</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:#0f172a;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #e0e7ff 0%, transparent 55%),
+      radial-gradient(1000px 500px at 100% 0%, #cffafe 0%, transparent 50%),
+      #f6f7fb;
+    min-height:100vh;
+    padding:28px 16px 60px;
+    display:flex;
+    justify-content:center;
+  }
+  .app{width:100%;max-width:700px}
+
+  /* ---------- 头部 ---------- */
+  header{text-align:center;margin-bottom:22px}
+  h1{
+    font-size:26px;margin:0 0 6px;letter-spacing:-.5px;
+    background:linear-gradient(120deg,#4f46e5,#0ea5e9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{margin:0;font-size:13px;color:#64748b}
+  .sub b{color:#4f46e5}
+
+  /* ---------- 标签页 ---------- */
+  .tabs{
+    display:flex;gap:6px;background:#fff;padding:6px;border-radius:16px;
+    box-shadow:0 10px 30px -18px rgba(15,23,42,.45),0 1px 3px rgba(15,23,42,.05);
+    margin-bottom:18px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{
+    flex:1 0 auto;white-space:nowrap;border:0;background:transparent;
+    padding:10px 14px;border-radius:11px;font:inherit;font-size:13.5px;font-weight:600;
+    color:#64748b;cursor:pointer;transition:.2s;
+  }
+  .tabs button:hover{color:#334155;background:#f8fafc}
+  .tabs button.active{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    box-shadow:0 8px 18px -10px #6366f1;
+  }
+
+  /* ---------- 卡片基础 ---------- */
+  .card{
+    background:#fff;border-radius:22px;padding:24px;
+    box-shadow:0 24px 48px -32px rgba(15,23,42,.5),0 2px 8px rgba(15,23,42,.04);
+    animation:pop .3s ease; position:relative; overflow:hidden;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .topbar{display:flex;gap:8px;margin-bottom:6px}
+  .stat{flex:1;text-align:center;padding:9px 6px;border-radius:13px;background:#f8fafc;}
+  .stat span{display:block;font-size:11px;color:#94a3b8;margin-bottom:2px;letter-spacing:.3px}
+  .stat b{font-size:17px;font-variant-numeric:tabular-nums;color:#1e293b}
+
+  /* ---------- 模式一：闪电判断 ---------- */
+  .num-display{
+    font-size:clamp(64px,19vw,112px);font-weight:800;line-height:1.05;
+    text-align:center;padding:22px 0 26px;font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,#4338ca,#0ea5e9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    user-select:none;
+  }
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .choice-btn{
+    padding:18px 12px;border-radius:16px;border:2px solid transparent;
+    font:inherit;font-size:17px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .choice-btn:active{transform:scale(.97)}
+  .choice-btn.prime{background:#ecfdf5;color:#059669;border-color:#a7f3d0}
+  .choice-btn.prime:hover{background:#d1fae5;transform:translateY(-2px)}
+  .choice-btn.comp{background:#fff1f2;color:#e11d48;border-color:#fecdd3}
+  .choice-btn.comp:hover{background:#ffe4e6;transform:translateY(-2px)}
+
+  .feedback{
+    min-height:40px;margin-top:14px;text-align:center;font-size:13.5px;
+    font-weight:600;color:#94a3b8;line-height:1.55;transition:.2s;
+  }
+  .feedback.ok{color:#059669}
+  .feedback.bad{color:#e11d48}
+
+  .progress{height:6px;border-radius:99px;background:#f1f5f9;overflow:hidden;margin-top:18px}
+  .progress > i{
+    display:block;height:100%;width:100%;border-radius:99px;
+    background:linear-gradient(90deg,#6366f1,#0ea5e9);transition:width .3s linear;
+  }
+
+  /* ---------- 模式二：质数雨 (按20格平滑下落重写) ---------- */
+  .rain-container{
+    background:#0f172a; border-radius:18px; overflow:hidden; display:flex; flex-direction:column;
+    box-shadow:inset 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .rain-header{
+    padding:12px 16px; display:flex; justify-content:space-between; color:#cbd5e1;
+    font-size:14px; font-weight:600; background:#1e293b; z-index:10;
+  }
+  .fall-area{ height:480px; position:relative; overflow:hidden; background:#0f172a; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b;}
+  .brick{
+    position:absolute; width:90%; left:5%; height:24px; border-radius:6px;
+    background:#334155; border:1px solid #475569;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:bold; font-size:14px; box-sizing:border-box;
+    transition: top 0.9s linear; /* 默认1秒下落1格 */
+  }
+  .brick.active{
+    background:linear-gradient(135deg,#f97316,#ea580c); border-color:#fb923c;
+    font-size:18px; box-shadow:0 0 15px rgba(249,115,22,0.5); z-index:10;
+  }
+  .rain-controls{ display:flex; width:100%; height:100px; z-index:10; }
+  .rain-btn{
+    flex:1; border:0; font:inherit; font-size:20px; font-weight:800; cursor:pointer;
+    color:#fff; transition: all 0.15s; display:flex; align-items:center; justify-content:center;
+  }
+  .rain-btn:active{ transform:scale(0.96); filter:brightness(0.9); }
+  .rain-btn.prime{ background:linear-gradient(135deg,#10b981,#059669); border-radius:0 0 0 18px; }
+  .rain-btn.comp{ background:linear-gradient(135deg,#f43f5e,#e11d48); border-radius:0 0 18px 0; }
+
+  /* ---------- 模式三：打地鼠 ---------- */
+  .whack-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+  .hole{
+    aspect-ratio:1; border-radius:50%; background:#e2e8f0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; font-weight:800; cursor:default; transition:all 0.2s;
+    box-shadow:inset 0 6px 12px rgba(0,0,0,0.15); user-select:none; color:transparent;
+  }
+  .hole.active{ cursor:pointer; background:#f8fafc; border:3px solid #cbd5e1; color:#0f172a; }
+  .hole.active.pop-up{ animation:popUp 0.3s ease-out; }
+  .hole.active.pop-down{ animation:popDown 0.3s ease-out; }
+  @keyframes popUp{ from{transform:scale(0.5); opacity:0} to{transform:scale(1); opacity:1} }
+  @keyframes popDown{ from{transform:translateY(-20px); opacity:0} to{transform:translateY(0); opacity:1} }
+  .hole.hit{ background:#ecfdf5; border-color:#6ee7b7; color:#059669; transform:scale(1.1); }
+  .hole.miss{ background:#fff1f2; border-color:#fda4af; color:#e11d48; animation:shake 0.3s; }
+
+  /* ---------- 模式四：质数拆弹 ---------- */
+  .bomb-num{ font-size:56px; font-weight:800; color:#e11d48; margin:16px 0; font-variant-numeric:tabular-nums; }
+  .bomb-opts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ---------- 模式五：数字猎手 ---------- */
+  .hunt-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
+    margin:16px auto 0; max-width:420px;
+  }
+  @media(min-width:540px){ .hunt-grid{grid-template-columns:repeat(5,1fr);max-width:480px} }
+  .cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:14px; border:2px solid #e2e8f0; background:#fff;
+    font:inherit; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
+    color:#334155; cursor:pointer; transition:.15s;
+  }
+  .cell:hover:not(.found){ border-color:#c7d2fe; transform:translateY(-2px); }
+  .cell.found{ background:#ecfdf5; border-color:#6ee7b7; color:#059669; cursor:default; }
+  .cell.wrong{ background:#fff1f2; border-color:#fda4af; color:#e11d48; animation:shake .35s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .hint{ margin:16px 0 0; text-align:center; font-size:12.5px; color:#94a3b8; line-height:1.6; }
+  .hint b{ color:#6366f1; }
+
+  /* ---------- 模式六：质数填空 ---------- */
+  .fill-seq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0}
+  .seq-item{
+    padding:11px 15px;border-radius:12px;background:#f1f5f9;color:#334155;
+    font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;
+  }
+  .seq-item.blank{background:#eef2ff;border:2px dashed #a5b4fc;color:#6366f1;padding:9px 13px}
+  .seq-item.reveal{background:#ecfdf5;border:2px solid #6ee7b7;color:#059669;padding:9px 13px}
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .option{
+    padding:16px;border-radius:14px;border:2px solid #e2e8f0;background:#fff;
+    font:inherit;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;
+    color:#334155;cursor:pointer;transition:.15s;
+  }
+  .option:hover:not(:disabled){border-color:#c7d2fe;transform:translateY(-2px)}
+  .option.correct{background:#ecfdf5;border-color:#6ee7b7;color:#059669}
+  .option.wrong{background:#fff1f2;border-color:#fda4af;color:#e11d48}
+  .option:disabled{cursor:default}
+
+  /* ---------- 模式七：质数表 ---------- */
+  .tgroup{margin-bottom:20px}
+  .tgroup:last-child{margin-bottom:0}
+  .tgroup h3{font-size:13px;font-weight:700;color:#475569;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .tgroup h3 span{font-size:11px;font-weight:600;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:99px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    padding:5px 9px;border-radius:9px;background:#eef2ff;color:#4338ca;
+    font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;
+    cursor:pointer;transition:.15s;user-select:none;
+  }
+  .chip:hover{background:#e0e7ff}
+  .chip.on{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 6px 14px -8px #6366f1}
+
+  /* ---------- 模式八：倍数技巧 ---------- */
+  .tip-card{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:12px; overflow:hidden; transition: 0.2s; }
+  .tip-card:hover{ border-color:#cbd5e1; box-shadow: 0 4px 12px -4px rgba(0,0,0,0.05); }
+  .tip-header{ padding:16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:700; color:#334155; font-size:15px; user-select:none; }
+  .tip-header .icon{ transition:transform 0.3s; color:#94a3b8; font-size:12px; }
+  .tip-card.open .tip-header .icon{ transform:rotate(180deg); }
+  .tip-content{ display:none; padding:0 16px 16px; font-size:13.5px; color:#475569; line-height:1.7; border-top:1px solid #e2e8f0; }
+  .tip-card.open .tip-content{ display:block; animation: pop 0.3s ease; }
+  .tip-content b{ color:#4f46e5; background:#eef2ff; padding:0 4px; border-radius:4px; }
+  .tip-example{ margin-top:8px; padding:8px 12px; background:#fff; border-radius:8px; border:1px dashed #cbd5e1; color:#64748b; }
+
+  /* ---------- 结果页 ---------- */
+  .result{text-align:center}
+  .result .emoji{font-size:46px;line-height:1;margin-bottom:8px}
+  .result h2{margin:0 0 18px;font-size:20px;letter-spacing:-.3px}
+  .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+  .result-grid > div{background:#f8fafc;border-radius:14px;padding:14px}
+  .result-grid span{display:block;font-size:11.5px;color:#94a3b8;margin-bottom:4px}
+  .result-grid b{font-size:22px;font-variant-numeric:tabular-nums}
+  .primary-btn{
+    width:100%;padding:15px;border-radius:15px;border:0;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    font:inherit;font-size:16px;font-weight:700;cursor:pointer;
+    box-shadow:0 14px 26px -14px #6366f1;transition:.15s;
+  }
+  .primary-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>质数记忆挑战</h1>
+    <p class="sub">1000 以内共有 <b>168</b> 个质数，来挑战你的记忆力</p>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-mode="flash">⚡ 闪电判断</button>
+    <button data-mode="rain">🌧️ 质数雨</button>
+    <button data-mode="whack">🔨 打地鼠</button>
+    <button data-mode="bomb">💣 质数拆弹</button>
+    <button data-mode="hunt">🎯 数字猎手</button>
+    <button data-mode="fill">🧩 质数填空</button>
+    <button data-mode="table">📖 质数表</button>
+    <button data-mode="tips">💡 倍数大全</button>
+  </nav>
+
+  <main id="stage"></main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= 基础数据 ================= */
+  const LIMIT = 1000;
+  const isPrime = new Array(LIMIT + 1).fill(true);
+  isPrime[0] = isPrime[1] = false;
+  for (let i = 2; i * i <= LIMIT; i++) {
+    if (isPrime[i]) for (let j = i * i; j <= LIMIT; j += i) isPrime[j] = false;
+  }
+  const PRIMES = [];
+  for (let i = 2; i <= LIMIT; i++) if (isPrime[i]) PRIMES.push(i);
+
+  /* ================= 工具函数 ================= */
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = rnd(i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function primeFactors(n) {
+    const fs = [];
+    let x = n;
+    for (const p of PRIMES) {
+      if (p * p > x) break;
+      while (x % p === 0) { fs.push(p); x /= p; }
+    }
+    if (x > 1) fs.push(x);
+    return fs;
+  }
+  function explain(n) {
+    if (isPrime[n]) return n + ' 是质数，只能被 1 和它本身整除';
+    return n + ' 是合数：' + primeFactors(n).join(' × ') + ' = ' + n;
+  }
+  function randomComposite() {
+    let n;
+    if (Math.random() < 0.4) {
+      do { n = 3 + rnd(996); } while (isPrime[n] || n % 2 === 0); // 生成奇数合数增加难度
+    } else {
+      do { n = 2 + rnd(998); } while (isPrime[n]);
+    }
+    return n;
+  }
+
+  /* ================= 模式切换框架 ================= */
+  const stage = document.getElementById('stage');
+  const tabs = document.getElementById('tabs');
+  let cleanup = [];
+
+  function clearCleanup() {
+    cleanup.forEach(fn => { try { fn(); } catch (e) {} });
+    cleanup = [];
+  }
+
+  const renderers = { 
+    flash: renderFlash, 
+    rain: renderRain,
+    whack: renderWhack,
+    bomb: renderBomb,
+    hunt: renderHunt, 
+    fill: renderFill, 
+    table: renderTable,
+    tips: renderTips
+  };
+
+  function setMode(mode) {
+    clearCleanup();
+    Array.prototype.forEach.call(tabs.children, b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    stage.innerHTML = '';
+    renderers[mode]();
+  }
+
+  tabs.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (btn) setMode(btn.dataset.mode);
+  });
+
+  /* ================= 模式一：闪电判断 ================= */
+  function renderFlash() {
+    let score = 0, combo = 0, bestCombo = 0, correct = 0, wrong = 0;
+    let timeLeft = 60, locked = false, over = false, current = 0;
+
+    stage.innerHTML =
+      '<div class="card">' +
+        '<div class="topbar">' +
+          '<div class="stat"><span>得分</span><b id="fScore">0</b></div>' +
+          '<div class="stat"><span>连击</span><b id="fCombo">0</b></div>' +
+          '<div class="stat"><span>剩余</span><b id="fTime">60s</b></div>' +
+        '</div>' +
+        '<div class="num-display" id="fNum">—</div>' +
+        '<div class="choices">' +
+          '<button class="choice-btn prime" id="btnPrime">质数</button>' +
+          '<button class="choice-btn comp" id="btnComp">合数</button>' +
+        '</div>' +
+        '<div class="feedback" id="fFb">判断这个数是不是质数</div>' +
+        '<div class="progress"><i id="fBar"></i></div>' +
+      '</div>';
+
+    const $ = id => document.getElementById(id);
+    const numEl = $('fNum'), fbEl = $('fFb'), barEl = $('fBar');
+
+    function newNumber() {
+      current = Math.random() < 0.5 ? pick(PRIMES) : randomComposite();
+      numEl.textContent = current;
+      if (numEl.animate) {
+        numEl.animate(
+          [{ opacity: .25, transform: 'scale(.94)' }, { opacity: 1, transform: 'scale(1)' }],
+          { duration: 220, easing: 'ease-out' }
+        );
+      }
+    }
+
+    function answer(sayPrime) {
+      if (locked || over) return;
+      locked = true;
+      const actual = isPrime[current];
+
+      if (actual === sayPrime) {
+        correct++;
+        combo++;
+        bestCombo = Math.max(bestCombo, combo);
+        const gain = 10 + Math.min(combo - 1, 9) * 2;
+        score += gain;
+        $('fScore').textContent = score;
+        $('fCombo').textContent = combo;
+        fbEl.className = 'feedback ok';
+        fbEl.textContent = '✓ ' + explain(current) + '　+' + gain;
+        setTimeout(() => {
+          if (over) return;
+          locked = false; fbEl.className = 'feedback'; fbEl.textContent = '';
+          newNumber();
+        }, 430);
+      } else {
+        wrong++;
+        combo = 0;
+        $('fCombo').textContent = '0';
+        fbEl.className = 'feedback bad';
+        fbEl.textContent = '✗ ' + explain(current);
+        setTimeout(() => {
+          if (over) return;
+          locked = false; fbEl.className = 'feedback'; fbEl.textContent = '';
+          newNumber();
+        }, 1500);
+      }
+    }
+
+    $('btnPrime').addEventListener('click', () => answer(true));
+    $('btnComp').addEventListener('click', () => answer(false));
+
+    const onKey = e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); answer(true); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); answer(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    cleanup.push(() => window.removeEventListener('keydown', onKey));
+
+    const timer = setInterval(() => {
+      if (over) return;
+      timeLeft--;
+      $('fTime').textContent = timeLeft + 's';
+      barEl.style.width = (timeLeft / 60 * 100) + '%';
+      if (timeLeft <= 0) end();
+    }, 1000);
+    cleanup.push(() => clearInterval(timer));
+
+    function end() {
+      over = true;
+      clearInterval(timer);
+      const total = correct + wrong;
+      const acc = total ? Math.round(correct / total * 100) : 0;
+      const emoji = acc >= 90 && total >= 15 ? '🏆' : acc >= 70 ? '🎉' : '💪';
+      stage.innerHTML =
+        '<div class="card result">' +
+          '<div class="emoji">' + emoji + '</div><h2>时间到！</h2>' +
+          '<div class="result-grid">' +
+            '<div><span>总得分</span><b>' + score + '</b></div>' +
+            '<div><span>答对 / 答错</span><b>' + correct + ' / ' + wrong + '</b></div>' +
+            '<div><span>正确率</span><b>' + acc + '%</b></div>' +
+            '<div><span>最高连击</span><b>' + bestCombo + '</b></div>' +
+          '</div>' +
+          '<button class="primary-btn" id="again">再来一局</button>' +
+        '</div>';
+      document.getElementById('again').addEventListener('click', () => setMode('flash'));
+    }
+    newNumber();
+  }
+
+  /* ================= 模式二：质数雨 (真正的20格平滑下落) ================= */
+  function renderRain() {
+    let score = 0, lives = 3, gameOver = false;
+    const BRICK_H = 24; // 每格24px
+    const MAX_Y = 20;   // 共20格
+    
+    stage.innerHTML = `
+      <div class="card" style="padding:0;">
+        <div class="rain-header">
+          <div>❤️ <span id="rLives">3</span></div>
+          <div>消除: <span id="rScore">0</span></div>
+        </div>
+        <div class="fall-area" id="fallArea"></div>
+        <div class="rain-controls">
+          <button class="rain-btn prime" id="rBtnPrime">⬅️ 质数</button>
+          <button class="rain-btn comp" id="rBtnComp">合数 ➡️</button>
+        </div>
+      </div>
+    `;
+
+    const fallArea = document.getElementById('fallArea');
+    let bricks = [];
+    let nextId = 0;
+
+    // 添加一个新砖块
+    function addBrick(startY) {
+      const val = Math.random() < 0.6 ? pick(PRIMES) : randomComposite();
+      const isP = isPrime[val];
+      const el = document.createElement('div');
+      el.className = 'brick';
+      el.style.top = (startY * BRICK_H) + 'px';
+      el.textContent = '';
+      fallArea.appendChild(el);
+      
+      const b = { id: nextId++, value: val, isPrime: isP, y: startY, el };
+      bricks.push(b);
+    }
+
+    // 初始化：生成15个砖块，最底部的y=0(顶格)，依次向上(y=-1, -2...)
+    for(let i = 0; i < 15; i++) {
+      addBrick(-i);
+    }
+
+    function updateUI() {
+      // 按照 y 坐标从小到大排序，最底部（y最大）的在最后
+      bricks.sort((a,b) => a.y - b.y);
+      
+      bricks.forEach((b, i) => {
+        b.el.style.top = (b.y * BRICK_H) + 'px';
+        // 如果超出屏幕上方太远，暂时隐藏优化性能
+        if (b.y < -5) {
+          b.el.style.display = 'none';
+        } else {
+          b.el.style.display = 'flex';
+        }
+
+        // 只有最底部的砖块（排在最后，且未超出底端）才显示数字
+        if (i === bricks.length - 1 && b.y < MAX_Y) {
+          b.el.classList.add('active');
+          b.el.textContent = b.value;
+        } else {
+          b.el.classList.remove('active');
+          b.el.textContent = '';
+        }
+      });
+    }
+
+    function tick() {
+      if (gameOver) return;
+      
+      // 整体匀速下落 1 格
+      bricks.forEach(b => {
+        b.y += 1;
+        b.el.style.transition = 'top 0.9s linear';
+      });
+
+      // 检查是否碰到底端
+      if (bricks.some(b => b.y >= MAX_Y)) {
+        endGame("砖块碰到底端！");
+        return;
+      }
+
+      // 保持队列长度足够（比如15个），如果不够在顶部补一个
+      if (bricks.length < 15) {
+        const minY = bricks.length > 0 ? Math.min(...bricks.map(b => b.y)) : 0;
+        addBrick(minY - 1);
+      }
+
+      updateUI();
+    }
+
+    function judge(sayPrime) {
+      if (gameOver) return;
+      
+      // 排最后的是y最大的，即最底部的砖块
+      const bottomBrick = bricks[bricks.length - 1];
+      if (!bottomBrick || bottomBrick.y >= MAX_Y) return;
+
+      if (bottomBrick.isPrime === sayPrime) {
+        // 答对消除
+        score += 1;
+        document.getElementById('rScore').textContent = score;
+        
+        bottomBrick.el.remove();
+        bricks.pop(); // 移除这个砖块
+        updateUI();   // 原先在上面的砖块现在变成了最底部，继续以1秒1格的速度下落
+      } else {
+        // 答错
+        lives--;
+        document.getElementById('rLives').textContent = lives;
+        if (lives <= 0) {
+          endGame("生命值耗尽");
+          return;
+        }
+
+        // 整体向下瞬移 5 格 (使用 0.2s 的快速坠落动画)
+        bricks.forEach(b => {
+          b.y += 5;
+          b.el.style.transition = 'top 0.2s ease-in';
+        });
+
+        // 立刻检查是否超出底端
+        if (bricks.some(b => b.y >= MAX_Y)) {
+          endGame("砖块超出底端！");
+          return;
+        }
+        updateUI();
+      }
+    }
+
+    document.getElementById('rBtnPrime').addEventListener('click', () => judge(true));
+    document.getElementById('rBtnComp').addEventListener('click', () => judge(false));
+
+    const onKey = e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); judge(true); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); judge(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    cleanup.push(() => window.removeEventListener('keydown', onKey));
+
+    function endGame(msg) {
+      gameOver = true;
+      clearInterval(tickTimer);
+      stage.innerHTML = `
+        <div class="card result">
+          <div class="emoji">💥</div><h2>游戏结束</h2>
+          <p style="color:#64748b;margin-bottom:20px;">${msg}</p>
+          <div class="result-grid">
+            <div><span>最终消除</span><b>${score}</b></div>
+            <div><span>剩余生命</span><b>${lives}</b></div>
+          </div>
+          <button class="primary-btn" id="again">再来一局</button>
+        </div>
+      `;
+      document.getElementById('again').addEventListener('click', () => setMode('rain'));
+    }
+
+    const tickTimer = setInterval(tick, 1000);
+    cleanup.push(() => clearInterval(tickTimer));
+    updateUI();
+  }
+
+  /* ================= 模式三：打地鼠 ================= */
+  function renderWhack() {
+    let score = 0, lives = 3, gameOver = false;
+    
+    stage.innerHTML = `
+      <div class="card">
+        <div class="topbar">
+          <div class="stat"><span>得分</span><b id="wScore">0</b></div>
+          <div class="stat"><span>生命</span><b id="wLives">3</b></div>
+        </div>
+        <div class="whack-grid" id="wGrid">
+          ${Array(9).fill(0).map((_, i) => `<div class="hole" id="hole-${i}"></div>`).join('')}
+        </div>
+        <p class="hint">点击冒出来的<b>质数</b>！点错合数或漏掉质数会扣血</p>
+      </div>
+    `;
+
+    const grid = document.getElementById('wGrid');
+    let activeTimeouts = [];
+    
+    function spawn() {
+      if (gameOver) return;
+      const emptyHoles = [];
+      for(let i=0; i<9; i++) {
+        if (!document.getElementById(`hole-${i}`).classList.contains('active')) {
+          emptyHoles.push(i);
+        }
+      }
+      if (emptyHoles.length === 0) return;
+      
+      const holeIdx = pick(emptyHoles);
+      const hole = document.getElementById(`hole-${holeIdx}`);
+      
+      const isP = Math.random() < 0.6;
+      const val = isP ? pick(PRIMES) : randomComposite();
+      
+      hole.textContent = val;
+      hole.className = 'hole active ' + (Math.random() < 0.5 ? 'pop-up' : 'pop-down');
+      hole.dataset.isPrime = isP;
+      
+      const lifeTimeout = setTimeout(() => {
+        if (hole.classList.contains('active')) {
+          if (hole.dataset.isPrime === 'true') {
+            loseLife();
+          }
+          hole.className = 'hole';
+          hole.textContent = '';
+        }
+      }, 1500);
+      activeTimeouts.push(lifeTimeout);
+    }
+
+    function loseLife() {
+      if (gameOver) return;
+      lives--;
+      document.getElementById('wLives').textContent = lives;
+      if (lives <= 0) endGame();
+    }
+
+    const spawnLoop = setInterval(spawn, 800);
+    cleanup.push(() => clearInterval(spawnLoop));
+
+    grid.addEventListener('click', e => {
+      const hole = e.target.closest('.hole.active');
+      if (!hole || gameOver) return;
+      
+      const isP = hole.dataset.isPrime === 'true';
+      hole.className = 'hole'; // 瞬间移除激活状态，防止重复点击
+      hole.textContent = '';
+      
+      if (isP) {
+        score += 10;
+        document.getElementById('wScore').textContent = score;
+        hole.className = 'hole hit';
+        setTimeout(() => { if(hole.className.includes('hit')) hole.className = 'hole'; }, 300);
+      } else {
+        loseLife();
+        hole.className = 'hole miss';
+        setTimeout(() => { if(hole.className.includes('miss')) hole.className = 'hole'; }, 300);
+      }
+    });
+
+    function endGame() {
+      gameOver = true;
+      clearInterval(spawnLoop);
+      activeTimeouts.forEach(clearTimeout);
+      stage.innerHTML = `
+        <div class="card result">
+          <div class="emoji">🔨</div><h2>游戏结束</h2>
+          <div class="result-grid">
+            <div><span>最终得分</span><b>${score}</b></div>
+            <div><span>生命耗尽</span><b>0</b></div>
+          </div>
+          <button class="primary-btn" id="again">再来一局</button>
+        </div>
+      `;
+      document.getElementById('again').addEventListener('click', () => setMode('whack'));
+    }
+    cleanup.push(() => { gameOver = true; activeTimeouts.forEach(clearTimeout); });
+  }
+
+  /* ================= 模式四：质数拆弹 ================= */
+  function renderBomb() {
+    let lives = 3, level = 1, gameOver = false;
+    let currentNum = 0;
+    let remainingFactors = [];
+    
+    stage.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div class="topbar">
+          <div class="stat"><span>拆弹关卡</span><b id="bLevel">1</b></div>
+          <div class="stat"><span>剩余生命</span><b id="bLives">3</b></div>
+        </div>
+        <div style="margin: 20px 0;">
+          <div style="font-size:60px; margin-bottom:10px;" id="bombIcon">💣</div>
+          <div class="bomb-num" id="bombNum">—</div>
+          <div style="color:#64748b; font-size:14px;" id="bombHint">请在下方选出能整除它的质数</div>
+        </div>
+        <div class="bomb-opts" id="bombOpts"></div>
+        <div class="feedback" id="bombFb" style="margin-top:20px; font-size:15px;"></div>
+      </div>
+    `;
+
+    function nextLevel() {
+      if (gameOver) return;
+      
+      let factors = [];
+      while (true) {
+        factors = [];
+        const numFactors = Math.random() < 0.5 ? 2 : 3;
+        for (let i=0; i<numFactors; i++) {
+          factors.push(pick(PRIMES.filter(x => x < 40)));
+        }
+        factors.sort((a,b) => a-b);
+        const product = factors.reduce((a,b)=>a*b, 1);
+        if (product <= 1000 && product > 4) {
+          currentNum = product;
+          break;
+        }
+      }
+      
+      remainingFactors = factors;
+      renderBombUI();
+    }
+
+    function renderBombUI() {
+      document.getElementById('bLevel').textContent = level;
+      document.getElementById('bLives').textContent = lives;
+      document.getElementById('bombNum').textContent = currentNum;
+      document.getElementById('bombIcon').textContent = '💣';
+      
+      const correct = remainingFactors[0];
+      const optsSet = new Set([correct]);
+      
+      while (optsSet.size < 4) {
+        const isPerturbP = Math.random() < 0.5;
+        const val = isPerturbP ? pick(PRIMES) : randomComposite();
+        if (val !== correct && val < currentNum) optsSet.add(val);
+      }
+      
+      const opts = shuffle(Array.from(optsSet));
+      document.getElementById('bombOpts').innerHTML = opts.map(v => 
+        `<button class="option" data-v="${v}">${v}</button>`
+      ).join('');
+      
+      document.getElementById('bombFb').className = 'feedback';
+      document.getElementById('bombFb').textContent = '';
+    }
+
+    document.getElementById('bombOpts').addEventListener('click', e => {
+      const btn = e.target.closest('.option');
+      if (!btn || gameOver) return;
+      
+      const val = Number(btn.dataset.v);
+      const fb = document.getElementById('bombFb');
+      
+      if (currentNum % val === 0 && isPrime[val]) {
+        currentNum = currentNum / val;
+        remainingFactors.shift();
+        
+        btn.style.background = '#ecfdf5';
+        btn.style.borderColor = '#6ee7b7';
+        btn.style.color = '#059669';
+        
+        if (currentNum === 1 || remainingFactors.length === 0 || isPrime[currentNum]) {
+          document.getElementById('bombIcon').textContent = '🎉';
+          fb.className = 'feedback ok';
+          fb.textContent = '成功拆除炸弹！';
+          setTimeout(() => {
+            level++;
+            nextLevel();
+          }, 1000);
+        } else {
+          fb.className = 'feedback ok';
+          fb.textContent = '拆掉一层！继续拆解剩下的部分...';
+          setTimeout(() => {
+            renderBombUI();
+          }, 600);
+        }
+      } else {
+        lives--;
+        document.getElementById('bLives').textContent = lives;
+        fb.className = 'feedback bad';
+        fb.textContent = '💥 错误选择，炸弹爆炸了！';
+        document.getElementById('bombIcon').textContent = '💥';
+        
+        if (lives <= 0) {
+          endGame();
+        } else {
+          setTimeout(() => {
+            nextLevel();
+          }, 1500);
+        }
+      }
+    });
+
+    function endGame() {
+      gameOver = true;
+      stage.innerHTML = `
+        <div class="card result">
+          <div class="emoji">💣</div><h2>拆弹失败</h2>
+          <div class="result-grid">
+            <div><span>成功拆弹</span><b>${level - 1} 次</b></div>
+          </div>
+          <button class="primary-btn" id="again">再来一局</button>
+        </div>
+      `;
+      document.getElementById('again').addEventListener('click', () => setMode('bomb'));
+    }
+
+    nextLevel();
+  }
+
+  /* ================= 模式五：数字猎手 ================= */
+  function renderHunt() {
+    const TOTAL = 20, PRIME_COUNT = 7;
+    const chosen = new Set();
+    while (chosen.size < PRIME_COUNT) chosen.add(pick(PRIMES));
+    while (chosen.size < TOTAL) {
+      const n = 2 + rnd(998);
+      if (!isPrime[n]) chosen.add(n);
+    }
+    const nums = shuffle(Array.from(chosen));
+    const found = new Set();
+    const t0 = Date.now();
+    let mistakes = 0;
+    let alive = true;
+    cleanup.push(() => { alive = false; });
+
+    stage.innerHTML =
+      '<div class="card">' +
+        '<div class="topbar">' +
+          '<div class="stat"><span>已找到</span><b id="hFound">0/' + PRIME_COUNT + '</b></div>' +
+          '<div class="stat"><span>错误</span><b id="hErr">0</b></div>' +
+          '<div class="stat"><span>用时</span><b id="hTime">0.0s</b></div>' +
+        '</div>' +
+        '<div class="hunt-grid" id="hGrid">' +
+          nums.map(n => '<button class="cell" data-n="' + n + '">' + n + '</button>').join('') +
+        '</div>' +
+        '<p class="hint">点击格子中所有的<b>质数</b>，点错会记录错误哦</p>' +
+      '</div>';
+
+    const timer = setInterval(() => {
+      const t = document.getElementById('hTime');
+      if (!t) { clearInterval(timer); return; }
+      t.textContent = ((Date.now() - t0) / 1000).toFixed(1) + 's';
+    }, 100);
+    cleanup.push(() => clearInterval(timer));
+
+    const grid = document.getElementById('hGrid');
+    grid.addEventListener('click', e => {
+      const btn = e.target.closest('.cell');
+      if (!btn || btn.classList.contains('found')) return;
+      const n = Number(btn.dataset.n);
+
+      if (isPrime[n]) {
+        btn.classList.add('found');
+        found.add(n);
+        document.getElementById('hFound').textContent = found.size + '/' + PRIME_COUNT;
+        if (found.size === PRIME_COUNT) win();
+      } else {
+        mistakes++;
+        document.getElementById('hErr').textContent = mistakes;
+        btn.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 380);
+      }
+    });
+
+    function win() {
+      clearInterval(timer);
+      if (!alive) return;
+      const secs = ((Date.now() - t0) / 1000).toFixed(1);
+      const acc = Math.round(PRIME_COUNT / (PRIME_COUNT + mistakes) * 100);
+      stage.innerHTML =
+        '<div class="card result">' +
+          '<div class="emoji">🎯</div><h2>全部找到了！</h2>' +
+          '<div class="result-grid">' +
+            '<div><span>用时</span><b>' + secs + 's</b></div>' +
+            '<div><span>错误次数</span><b>' + mistakes + '</b></div>' +
+            '<div><span>准确率</span><b>' + acc + '%</b></div>' +
+            '<div><span>找出质数</span><b>' + PRIME_COUNT + '</b></div>' +
+          '</div>' +
+          '<button class="primary-btn" id="again">再来一局</button>' +
+        '</div>';
+      document.getElementById('again').addEventListener('click', () => setMode('hunt'));
+    }
+  }
+
+  /* ================= 模式六：质数填空 ================= */
+  function renderFill() {
+    const TOTAL_Q = 10;
+    let qi = 0, right = 0, q = null, answered = false, alive = true;
+    cleanup.push(() => { alive = false; });
+
+    stage.innerHTML =
+      '<div class="card">' +
+        '<div class="topbar">' +
+          '<div class="stat"><span>题目</span><b id="qIdx">1/' + TOTAL_Q + '</b></div>' +
+          '<div class="stat"><span>答对</span><b id="qRight">0</b></div>' +
+        '</div>' +
+        '<p class="hint">这是一段<b>连续的质数</b>（相邻两项之间没有其它质数）</p>' +
+        '<div class="fill-seq" id="seq"></div>' +
+        '<div class="options" id="opts"></div>' +
+        '<div class="feedback" id="qFb">选出缺失的那个质数</div>' +
+      '</div>';
+
+    function makeQ() {
+      const span = 6;
+      const start = rnd(PRIMES.length - span - 1);
+      const seq = PRIMES.slice(start, start + span);
+      const blankIdx = 1 + rnd(span - 2);
+      const answer = seq[blankIdx];
+      const used = new Set(seq);
+      const opts = new Set([answer]);
+
+      let d = 1;
+      while (opts.size < 4 && d < 40) {
+        const cands = [answer - d, answer + d];
+        for (const c of cands) {
+          if (c >= 2 && !isPrime[c] && !used.has(c) && !opts.has(c)) opts.add(c);
+          if (opts.size >= 4) break;
+        }
+        d++;
+      }
+      return { seq, blankIdx, answer, options: shuffle(Array.from(opts)) };
+    }
+
+    function renderQ() {
+      if (!alive) return;
+      answered = false;
+      q = makeQ();
+      document.getElementById('qIdx').textContent = (qi + 1) + '/' + TOTAL_Q;
+
+      document.getElementById('seq').innerHTML = q.seq.map((v, i) =>
+        i === q.blankIdx
+          ? '<span class="seq-item blank" id="blankCell">?</span>'
+          : '<span class="seq-item">' + v + '</span>'
+      ).join('');
+
+      document.getElementById('opts').innerHTML = q.options.map(v =>
+        '<button class="option" data-v="' + v + '">' + v + '</button>'
+      ).join('');
+
+      const fb = document.getElementById('qFb');
+      fb.className = 'feedback';
+      fb.textContent = '选出缺失的那个质数';
+    }
+
+    function choose(v, btn) {
+      answered = true;
+      const fb = document.getElementById('qFb');
+      const optsEl = document.getElementById('opts');
+      const blank = document.getElementById('blankCell');
+
+      Array.prototype.forEach.call(optsEl.children, b => { b.disabled = true; });
+
+      if (v === q.answer) {
+        right++;
+        document.getElementById('qRight').textContent = right;
+        btn.classList.add('correct');
+        blank.textContent = q.answer;
+        blank.className = 'seq-item reveal';
+        fb.className = 'feedback ok';
+        fb.textContent = '✓ 答对了！' + q.answer + ' 是质数';
+      } else {
+        btn.classList.add('wrong');
+        Array.prototype.forEach.call(optsEl.children, b => {
+          if (Number(b.dataset.v) === q.answer) b.classList.add('correct');
+        });
+        blank.textContent = q.answer;
+        blank.className = 'seq-item reveal';
+        fb.className = 'feedback bad';
+        fb.textContent = '✗ 正确答案是 ' + q.answer + '（' + explain(q.answer) + '）';
+      }
+
+      const delay = v === q.answer ? 900 : 1900;
+      setTimeout(() => {
+        if (!alive) return;
+        qi++;
+        if (qi >= TOTAL_Q) finish();
+        else renderQ();
+      }, delay);
+    }
+
+    document.getElementById('opts').addEventListener('click', e => {
+      const btn = e.target.closest('.option');
+      if (!btn || answered) return;
+      choose(Number(btn.dataset.v), btn);
+    });
+
+    function finish() {
+      const acc = Math.round(right / TOTAL_Q * 100);
+      const emoji = acc >= 90 ? '🏆' : acc >= 60 ? '🎉' : '💪';
+      stage.innerHTML =
+        '<div class="card result">' +
+          '<div class="emoji">' + emoji + '</div><h2>十题完成！</h2>' +
+          '<div class="result-grid">' +
+            '<div><span>答对</span><b>' + right + '/' + TOTAL_Q + '</b></div>' +
+            '<div><span>正确率</span><b>' + acc + '%</b></div>' +
+          '</div>' +
+          '<button class="primary-btn" id="again">再挑战一次</button>' +
+        '</div>';
+      document.getElementById('again').addEventListener('click', () => setMode('fill'));
+    }
+
+    renderQ();
+  }
+
+  /* ================= 模式七：质数表 ================= */
+  function renderTable() {
+    const ranges = [
+      [2, 100], [101, 200], [201, 300], [301, 400], [401, 500],
+      [501, 600], [601, 700], [701, 800], [801, 900], [901, 1000]
+    ];
+
+    let html = '<div class="card">' +
+      '<p class="hint" style="margin:0 0 20px">点击数字可以把已经记住的质数标记出来 ✨</p>';
+
+    for (const r of ranges) {
+      const list = PRIMES.filter(p => p >= r[0] && p <= r[1]);
+      html += '<div class="tgroup">' +
+        '<h3>' + r[0] + ' – ' + r[1] + '<span>' + list.length + ' 个</span></h3>' +
+        '<div class="chips">' +
+        list.map(p => '<span class="chip">' + p + '</span>').join('') +
+        '</div></div>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+
+    stage.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => c.classList.toggle('on'));
+    });
+  }
+
+  /* ================= 模式八：倍数技巧大全 ================= */
+  function renderTips() {
+    const tips = [
+      {
+        title: '2、5 的倍数（看个位）',
+        content: '个位是 <b>0, 2, 4, 6, 8</b> 则是 2 的倍数；个位是 <b>0 或 5</b> 则是 5 的倍数。',
+        example: '例：34、98 可被 2 整除；20、75 可被 5 整除。'
+      },
+      {
+        title: '3、9 的倍数（看各位数字之和）',
+        content: '各位数字相加，如果和是 3（或 9）的倍数，则该数是 3（或 9）的倍数。',
+        example: '例：256（2+5+6=13，不是3的倍数）；891（8+9+1=18，是9的倍数）。'
+      },
+      {
+        title: '4、25 的倍数（看末两位）',
+        content: '看数字的最后两位，如果是 4（或 25）的倍数，则该数能被 4（或 25）整除。',
+        example: '例：916 末两位 16 是 4 的倍数；350 末两位 50 是 25 的倍数。'
+      },
+      {
+        title: '8、125 的倍数（看末三位）',
+        content: '看数字的最后三位，如果是 8（或 125）的倍数，则该数能被 8（或 125）整除。',
+        example: '例：1512 末三位 512 是 8 的倍数；2625 末三位 625 是 125 的倍数。'
+      },
+      {
+        title: '7 的倍数（有三种方法）',
+        content: '<b>1. 割尾相减法</b>：截去个位，剩下的数减去个位的 2 倍。<br><b>2. 去尾相加法</b>：截去个位，剩下的数加上个位的 5 倍。<br><b>3. 三位截断法</b>：从右往左三位一截，奇数段之和减去偶数段之和，看差是否是 7 的倍数。',
+        example: '例 343：割尾法 34-(3×2)=28；去尾法 34+(3×5)=49，都能被 7 整除。'
+      },
+      {
+        title: '11 的倍数（有两种方法）',
+        content: '<b>1. 奇偶位差法</b>：奇数位数字之和与偶数位数字之和的差，如果是 11 的倍数（含0），则原数是 11 的倍数。<br><b>2. 割尾相减法</b>：截去个位，剩下的数减去个位。',
+        example: '例 253：奇偶位差法 (2+3)-5 = 0；割尾法 25-3=22，均符合。'
+      },
+      {
+        title: '13 的倍数（有两种方法）',
+        content: '<b>1. 割尾相加法</b>：截去个位，剩下的数加上个位的 4 倍。<br><b>2. 三位截断法</b>：从右往左三位一截，奇数段之和减去偶数段之和，看差是否是 13 的倍数。',
+        example: '例 169：割尾法 16+(9×4)=52；52 能被 13 整除。'
+      },
+      {
+        title: '17 的倍数（割尾相减法）',
+        content: '截去个位，剩下的数减去个位的 5 倍。如果差是 17 的倍数，则原数是 17 的倍数。',
+        example: '例 238：23 - (8×5) = -17，-17 是 17 的倍数。'
+      },
+      {
+        title: '19 的倍数（割尾相加法）',
+        content: '截去个位，剩下的数加上个位的 2 倍。如果和是 19 的倍数，则原数是 19 的倍数。',
+        example: '例 437：43 + (7×2) = 57，57 是 19 的倍数。'
+      },
+      {
+        title: '23 的倍数（割尾相加法）',
+        content: '截去个位，剩下的数加上个位的 7 倍。如果和是 23 的倍数，则原数是 23 的倍数。',
+        example: '例 299：29 + (9×7) = 92，92 是 23 的倍数。'
+      },
+      {
+        title: '29 的倍数（割尾相加法）',
+        content: '截去个位，剩下的数加上个位的 3 倍。如果和是 29 的倍数，则原数是 29 的倍数。',
+        example: '例 319：31 + (9×3) = 58，58 是 29 的倍数。'
+      },
+      {
+        title: '31 的倍数（割尾相减法）',
+        content: '截去个位，剩下的数减去个位的 3 倍。如果差是 31 的倍数，则原数是 31 的倍数。',
+        example: '例 341：34 - (1×3) = 31，31 是 31 的倍数。'
+      },
+      {
+        title: '37 的倍数（三位截断法）',
+        content: '从右往左三位一截，奇数段之和减去偶数段之和，如果差是 37 的倍数，则原数能被 37 整除。',
+        example: '例 259：259 - 0 = 259，259 = 37×7。'
+      },
+      {
+        title: '41 的倍数（割尾相减法）',
+        content: '截去个位，剩下的数减去个位的 4 倍。如果差是 41 的倍数，则原数是 41 的倍数。',
+        example: '例 328：32 - (8×4) = 0，所以 328 是 41 的倍数。'
+      },
+      {
+        title: '终极必杀技：试除法',
+        content: '如果前面的技巧都无法整除，只需用<b>质数（2, 3, 5, 7, 11...）</b>去试除该数。一直试除到<b>该数的平方根</b>即可。如果没找到因数，它绝对就是个质数！',
+        example: '例：判断 97。试除 2, 3, 5, 7（7²=49<97，11²=121>97），都不能整除，97 是质数。'
+      }
+    ];
+
+    let html = '<div class="card">' +
+      '<p class="hint" style="margin:0 0 20px; text-align:left;">💡 遇到拿不准的数字时，用这些方法优先排查是否有因数。找到因数就是合数，找不到大概率就是质数！</p>';
+    
+    tips.forEach((t, i) => {
+      html += 
+        '<div class="tip-card" id="tip-' + i + '">' +
+          '<div class="tip-header" data-target="' + i + '">' +
+            t.title +
+            '<span class="icon">▼</span>' +
+          '</div>' +
+          '<div class="tip-content">' +
+            '<div>' + t.content + '</div>' +
+            '<div class="tip-example">' + t.example + '</div>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    stage.innerHTML = html;
+
+    stage.querySelectorAll('.tip-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const targetId = header.dataset.target;
+        document.getElementById('tip-' + targetId).classList.toggle('open');
+      });
+    });
+  }
+
+  /* ================= 启动 ================= */
+  setMode('flash');
+})();
+</script>
+</body>
+</html>
