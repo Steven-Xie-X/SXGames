@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>质数记忆挑战 · 终极版</title>
+<title>质数记忆</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0}
@@ -225,12 +225,36 @@
   .tip-example{ margin-top:8px; padding:8px 12px; background:#fff; border-radius:8px; border:1px dashed #cbd5e1; color:#64748b; }
 
   /* ---------- 模式九：质因数分解 ---------- */
+  .factor-topbar { position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 16px; min-height: 32px;}
+  .switch-group { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #64748b; }
+  .switch-label.active { color: #3b82f6; }
+  .switch-label.active.right { color: #10b981; }
+  
+  /* 极简 iOS 风格拨动开关 */
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 26px; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+  input:checked + .slider { background-color: #10b981; }
+  input:checked + .slider:before { transform: translateX(20px); }
+
+  .factor-topbar .clear-btn { position: absolute; right: 0; top: 0; }
+
   .factor-note{ background:#e0f2fe; color:#0284c7; padding:12px 16px; border-radius:12px; font-size:13px; line-height:1.6; margin-bottom:20px; border:1px solid #bae6fd; }
   .factor-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; }
-  .factor-card{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center; transition:.2s; }
-  .factor-card:hover{ background:#fff; border-color:#a5b4fc; box-shadow:0 4px 12px -4px rgba(99,102,241,0.2); }
+  .factor-card{ 
+    background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center; transition:.2s; 
+    display: flex; flex-direction: column; justify-content: center; min-height: 64px;
+  }
+  .factor-card:hover:not(.masked){ background:#fff; border-color:#a5b4fc; box-shadow:0 4px 12px -4px rgba(99,102,241,0.2); }
+  
+  /* 遮挡状态的样式 */
+  .factor-card.masked { background:#f1f5f9; border-style: dashed; cursor: pointer; }
+  .factor-card.masked .factor-eq { color: transparent; background: #e2e8f0; border-radius: 4px; user-select: none; }
+  .factor-card.masked .factor-num { color: #94a3b8; }
+  
   .factor-num{ font-size:16px; font-weight:800; color:#334155; margin-bottom:4px; }
-  .factor-eq{ font-size:12.5px; color:#64748b; font-variant-numeric:tabular-nums; font-weight:600; }
+  .factor-eq{ font-size:12.5px; color:#64748b; font-variant-numeric:tabular-nums; font-weight:600; z-index: 1; }
 
   /* ---------- 结果页与复盘模态框 ---------- */
   .result{text-align:center}
@@ -287,12 +311,18 @@
   .history-top { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px;}
   .history-bottom { font-size: 13px; color: #64748b; }
   .history-factor { color: #4f46e5; font-weight: 600; margin-top: 4px;}
+
+  /* 确认框 */
+  .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .confirm-actions button { flex: 1; padding: 12px; border-radius: 12px; font: inherit; font-weight: 700; cursor: pointer; border: none;}
+  .confirm-actions .btn-cancel { background: #f1f5f9; color: #64748b; }
+  .confirm-actions .btn-ok { background: #10b981; color: #fff; }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>质数记忆挑战</h1>
+    <h1>质数记忆</h1>
     <p class="sub">
       <input type="number" id="rangeMin" value="1" min="1" max="1000"> - 
       <input type="number" id="rangeMax" value="1000" min="2" max="1000"> 之间共有 
@@ -381,7 +411,7 @@
     return pick(activeComposites);
   }
 
-  /* ================= 复盘 UI 组件 ================= */
+  /* ================= 复盘与弹窗 UI ================= */
   function showReviewModal() {
     if (roundHistory.length === 0) return;
     const overlay = document.createElement('div');
@@ -427,7 +457,6 @@
   }
 
   function buildResultView(data) {
-    // data: { emoji, title, statsHtml, replayMode }
     let btns = '';
     if (roundHistory.length > 0) {
       btns = `
@@ -590,8 +619,6 @@
         score += gain;
         $('fScore').textContent = score;
         $('fCombo').textContent = combo;
-        
-        // 【优化】答对不显示过渡文字，直接立刻刷新下一题
         newNumber();
       } else {
         wrong++;
@@ -828,7 +855,6 @@
       
       const lifeTimeout = setTimeout(() => {
         if (hole.classList.contains('active')) {
-          // 漏掉质数扣血
           if (hole.dataset.isPrime === 'true') {
             roundHistory.push({ num: val, isCorrect: false, userAns: '未作答(超时)', actual: '质数' });
             loseLife();
@@ -896,7 +922,7 @@
     let remainingFactors = [];
     let timerId = null;
     let timeLeft = 5.0;
-    let initialNum = 0; // 记录爆炸时的初始数字
+    let initialNum = 0; 
     
     stage.innerHTML = `
       <div class="card" style="text-align:center;">
@@ -925,7 +951,6 @@
         let num = rangeMin + rnd(rangeMax - rangeMin + 1);
         if (num > 10 && !isPrime[num]) {
            const factors = primeFactors(num);
-           // 【核心优化】彻底移除包含 2, 3, 5 因数的数字
            if (factors.some(f => f === 2 || f === 3 || f === 5)) {
               attempts++;
               continue; 
@@ -939,7 +964,6 @@
         attempts++;
       }
       
-      // 极端情况保底（例如用户设范围只包含 2~10）
       if (!found) {
         currentNum = 221; initialNum = 221; remainingFactors = [13, 17];
       }
@@ -953,22 +977,19 @@
       document.getElementById('bombNum').textContent = currentNum;
       document.getElementById('bombIcon').textContent = '💣';
       
-      // 当前展示的正确答案（取剩余的第一个质因数）
       const correct = remainingFactors[0];
       const optsSet = new Set([correct]);
       
-      // 【核心优化】极致迷惑：干扰项只取与正确答案大小相近的质数，绝对排除能整除的数字
       const lower = Math.max(2, Math.floor(correct * 0.5));
       const upper = Math.min(initialNum, Math.ceil(correct * 2.5));
       
       let pool = ALL_PRIMES.filter(p => 
         p !== correct && 
         p >= lower && p <= upper &&
-        !remainingFactors.includes(p) && // 不能包含其他正确答案
-        initialNum % p !== 0 // 绝不能用任何能整除初始数字的数作为干扰项
+        !remainingFactors.includes(p) && 
+        initialNum % p !== 0 
       );
       
-      // 如果该范围内干扰项不足3个，逐步放宽范围
       if (pool.length < 3) {
          pool = ALL_PRIMES.filter(p => 
             p !== correct && 
@@ -1035,7 +1056,6 @@
       
       const fb = document.getElementById('bombFb');
       fb.className = 'feedback bad';
-      // 【优化】显示全部分解
       fb.innerHTML = `⏰ 超时引爆！<br>正确答案是：<b>${remainingFactors[0]}</b><br><span style="font-size:12px; color:#64748b">${initialNum} = ${primeFactors(initialNum).join(' × ')}</span>`;
       document.getElementById('bombIcon').textContent = '💥';
       
@@ -1090,7 +1110,6 @@
         lives--;
         document.getElementById('bLives').textContent = lives;
         fb.className = 'feedback bad';
-        // 【优化】显示全部分解
         fb.innerHTML = `💥 错误！${val} 不能整除它。<br>正确答案是：<b>${remainingFactors[0]}</b><br><span style="font-size:12px; color:#64748b">${initialNum} = ${primeFactors(initialNum).join(' × ')}</span>`;
         document.getElementById('bombIcon').textContent = '💥';
         
@@ -1190,11 +1209,10 @@
       const secs = ((Date.now() - t0) / 1000).toFixed(1);
       const acc = Math.round(PRIME_COUNT / (PRIME_COUNT + mistakes) * 100);
       
-      // 【优化】猎手复盘，把所有出现的数字都塞进复盘里
       nums.forEach(n => {
          roundHistory.push({
             num: n,
-            isCorrect: isPrime[n], // 实际上作为质数就是正确的
+            isCorrect: isPrime[n],
             userAns: isPrime[n] ? '已找出' : '已避开',
             actual: isPrime[n] ? '质数' : '合数'
          });
@@ -1389,8 +1407,11 @@
     });
   }
 
-  /* ================= 8. 质因数分解 ================= */
+  /* ================= 8. 质因数分解 (含双向切换遮挡) ================= */
   function renderFactor() {
+    const isMasked = localStorage.getItem('factor_mask_state') === 'true';
+    const revealed = JSON.parse(localStorage.getItem('factor_revealed_cards') || '{}');
+    
     const targets = ALL_COMPOSITES.filter(n => n % 2 !== 0 && n % 3 !== 0 && n % 5 !== 0);
     const ranges = [
       [2, 100], [101, 200], [201, 300], [301, 400], [401, 500],
@@ -1398,8 +1419,19 @@
     ];
 
     let html = '<div class="card">' +
+      '<div class="factor-topbar">' +
+        '<div class="switch-group">' +
+          '<span class="switch-label left ' + (!isMasked ? 'active' : '') + '">无遮挡</span>' +
+          '<label class="switch">' +
+            '<input type="checkbox" id="maskToggle" ' + (isMasked ? 'checked' : '') + '>' +
+            '<span class="slider"></span>' +
+          '</label>' +
+          '<span class="switch-label right ' + (isMasked ? 'active' : '') + '">有遮挡</span>' +
+        '</div>' +
+        (isMasked ? '<button class="clear-btn" id="clearRevealed" style="border-color:#cbd5e1; color:#64748b; background:#f8fafc">重置揭晓</button>' : '') +
+      '</div>' +
       '<div class="factor-note">' +
-        '💡 <b>练习说明：</b>这里已经为你过滤掉了 2、3、5 的倍数，因为它们的判断规律太简单啦！剩下的这些“硬骨头”合数，是你在质数判断中容易卡壳的盲点，攻克它们能大幅提升判断力。' +
+        '💡 <b>练习说明：</b>这里已经为你过滤掉了 2、3、5 的倍数。开启“有遮挡”模式，可点击卡片切换揭晓或遮挡状态进行自测，进度会自动存档。' +
       '</div>';
 
     let hasContent = false;
@@ -1413,6 +1445,9 @@
         '<div class="factor-grid">';
       
       list.forEach(n => {
+        const isRevealed = revealed[n] === true;
+        const maskClass = (isMasked && !isRevealed) ? ' masked' : '';
+        
         const factors = primeFactors(n);
         const counts = {};
         factors.forEach(f => counts[f] = (counts[f] || 0) + 1);
@@ -1420,7 +1455,7 @@
            return counts[f] > 1 ? `${f}<sup>${counts[f]}</sup>` : f;
         }).join(' × ');
 
-        html += `<div class="factor-card">
+        html += `<div class="factor-card${maskClass}" data-n="${n}">
           <div class="factor-num">${n}</div>
           <div class="factor-eq">${str}</div>
         </div>`;
@@ -1435,6 +1470,70 @@
     
     html += '</div>';
     stage.innerHTML = html;
+
+    // 绑定开关事件
+    const maskToggle = document.getElementById('maskToggle');
+    if (maskToggle) {
+      maskToggle.addEventListener('change', () => {
+        maskToggle.checked = isMasked; 
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal-content" style="max-width: 320px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🧐</div>
+            <h3 style="margin: 0 0 10px; font-size: 18px;">切换展示模式</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+              确定要切换至【${!isMasked ? '有遮挡' : '无遮挡'}】模式吗？<br>您的揭晓记录将会保留。
+            </p>
+            <div class="confirm-actions">
+              <button class="btn-cancel">取消</button>
+              <button class="btn-ok" style="background: ${!isMasked ? '#10b981' : '#3b82f6'}">确定切换</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('.btn-cancel').addEventListener('click', () => overlay.remove());
+        overlay.querySelector('.btn-ok').addEventListener('click', () => {
+          localStorage.setItem('factor_mask_state', String(!isMasked));
+          overlay.remove();
+          renderFactor(); 
+        });
+      });
+    }
+
+    // 绑定卡片揭晓/遮挡双向切换事件
+    stage.querySelectorAll('.factor-card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (!isMasked) return; // 无遮挡模式下点击无效
+        
+        const n = card.dataset.n;
+        const isCurrentlyRevealed = !card.classList.contains('masked');
+        
+        if (isCurrentlyRevealed) {
+          // 变回遮挡
+          card.classList.add('masked');
+          delete revealed[n];
+        } else {
+          // 揭晓
+          card.classList.remove('masked');
+          revealed[n] = true;
+        }
+        localStorage.setItem('factor_revealed_cards', JSON.stringify(revealed));
+      });
+    });
+
+    // 重置揭晓进度
+    const clearRevBtn = document.getElementById('clearRevealed');
+    if (clearRevBtn) {
+      clearRevBtn.addEventListener('click', () => {
+        if(confirm('确定要重置所有卡片的揭晓状态吗？')) {
+           localStorage.removeItem('factor_revealed_cards');
+           renderFactor();
+        }
+      });
+    }
   }
 
   /* ================= 9. 倍数技巧大全 ================= */
