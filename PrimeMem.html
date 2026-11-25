@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>质数记忆挑战 · 1000以内</title>
+<title>质数记忆挑战 · 终极版</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0}
@@ -22,31 +22,35 @@
   }
   .app{width:100%;max-width:700px}
 
-  /* ---------- 头部 ---------- */
+  /* ---------- 头部与范围设置 ---------- */
   header{text-align:center;margin-bottom:20px}
   h1{
     font-size:24px;margin:0 0 6px;letter-spacing:-.5px;
     background:linear-gradient(120deg,#4f46e5,#0ea5e9);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .sub{margin:0;font-size:13px;color:#64748b}
-  .sub b{color:#4f46e5}
+  .sub{margin:0;font-size:13px;color:#64748b;display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
+  .sub input{
+    width: 52px; padding: 2px 4px; text-align: center; font: inherit;
+    border: 1px solid #cbd5e1; border-radius: 6px; outline: none; color: #334155; font-weight:600;
+    background: #fff; transition: .2s; -moz-appearance: textfield;
+  }
+  .sub input::-webkit-outer-spin-button, .sub input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .sub input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.2); }
+  .sub b{color:#4f46e5; font-size: 15px;}
 
-  /* ---------- 标签页 (修复横向拖动) ---------- */
+  /* ---------- 标签页 ---------- */
+  .tabs-wrapper{position:relative; margin-bottom:18px;}
   .tabs{
     display:flex;gap:6px;background:#fff;padding:6px;border-radius:16px;
     box-shadow:0 10px 30px -18px rgba(15,23,42,.45),0 1px 3px rgba(15,23,42,.05);
-    margin-bottom:18px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    flex-wrap:nowrap;
-    scrollbar-width:none;
-    width: 100%;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;width:100%;
+    cursor: grab; user-select: none;
   }
+  .tabs.dragging { cursor: grabbing; }
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{
-    flex:0 0 auto;
-    white-space:nowrap;border:0;background:transparent;
+    flex:0 0 auto;white-space:nowrap;border:0;background:transparent;
     padding:10px 16px;border-radius:11px;font:inherit;font-size:13.5px;font-weight:600;
     color:#64748b;cursor:pointer;transition:.2s;
   }
@@ -100,6 +104,8 @@
     display:block;height:100%;width:100%;border-radius:99px;
     background:linear-gradient(90deg,#6366f1,#0ea5e9);transition:width .3s linear;
   }
+  .progress.bomb-timeout > i{ background:linear-gradient(90deg,#f43f5e,#e11d48); }
+  .progress.bomb-urgent > i{ background:linear-gradient(90deg,#f59e0b,#ef4444); }
 
   /* ---------- 模式二：质数雨 ---------- */
   .rain-container{
@@ -131,22 +137,13 @@
   .rain-btn.prime{ background:linear-gradient(135deg,#10b981,#059669); border-radius:0 0 0 18px; }
   .rain-btn.comp{ background:linear-gradient(135deg,#f43f5e,#e11d48); border-radius:0 0 18px 0; }
 
-  /* ---------- 模式三：打地鼠 (修复盘面过大) ---------- */
-  .whack-grid{ 
-    display:grid; 
-    grid-template-columns:repeat(3,1fr); 
-    gap:10px; 
-    margin:20px auto; 
-    max-width:360px; 
-    width:100%; 
-  }
+  /* ---------- 模式三：打地鼠 ---------- */
+  .whack-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px auto; max-width:360px; width:100%; }
   .hole{
     aspect-ratio:1; border-radius:50%; background:#e2e8f0;
     display:flex; align-items:center; justify-content:center;
-    font-size:clamp(18px, 5vw, 28px);
-    font-weight:800; cursor:default; transition:all 0.2s;
-    box-shadow:inset 0 6px 12px rgba(0,0,0,0.15); user-select:none; color:transparent;
-    width: 100%;
+    font-size:clamp(18px, 5vw, 28px);font-weight:800; cursor:default; transition:all 0.2s;
+    box-shadow:inset 0 6px 12px rgba(0,0,0,0.15); user-select:none; color:transparent; width: 100%;
   }
   .hole.active{ cursor:pointer; background:#f8fafc; border:3px solid #cbd5e1; color:#0f172a; }
   .hole.active.pop-up{ animation:popUp 0.3s ease-out; }
@@ -161,13 +158,8 @@
   .bomb-opts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
   /* ---------- 模式五：数字猎手 ---------- */
-  .hunt-grid{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:9px;
-    margin:16px auto 0; max-width:400px; width:100%;
-  }
-  @media(min-width:540px){ 
-    .hunt-grid{grid-template-columns:repeat(5,1fr);max-width:480px;} 
-  }
+  .hunt-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:16px auto 0; max-width:400px; width:100%; }
+  @media(min-width:540px){ .hunt-grid{grid-template-columns:repeat(5,1fr);max-width:480px;} }
   .cell{
     aspect-ratio:1; display:flex; align-items:center; justify-content:center;
     border-radius:14px; border:2px solid #e2e8f0; background:#fff;
@@ -201,6 +193,13 @@
   .option:disabled{cursor:default}
 
   /* ---------- 模式七：质数表 ---------- */
+  .table-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .table-actions p{margin:0;font-size:12.5px;color:#94a3b8;}
+  .clear-btn{
+    background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;padding:6px 12px;
+    border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .clear-btn:hover{background:#ffe4e6;}
   .tgroup{margin-bottom:20px}
   .tgroup:last-child{margin-bottom:0}
   .tgroup h3{font-size:13px;font-weight:700;color:#475569;margin:0 0 10px;display:flex;align-items:center;gap:8px}
@@ -225,7 +224,15 @@
   .tip-content b{ color:#4f46e5; background:#eef2ff; padding:0 4px; border-radius:4px; }
   .tip-example{ margin-top:8px; padding:8px 12px; background:#fff; border-radius:8px; border:1px dashed #cbd5e1; color:#64748b; }
 
-  /* ---------- 结果页 ---------- */
+  /* ---------- 模式九：质因数分解 ---------- */
+  .factor-note{ background:#e0f2fe; color:#0284c7; padding:12px 16px; border-radius:12px; font-size:13px; line-height:1.6; margin-bottom:20px; border:1px solid #bae6fd; }
+  .factor-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; }
+  .factor-card{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; text-align:center; transition:.2s; }
+  .factor-card:hover{ background:#fff; border-color:#a5b4fc; box-shadow:0 4px 12px -4px rgba(99,102,241,0.2); }
+  .factor-num{ font-size:16px; font-weight:800; color:#334155; margin-bottom:4px; }
+  .factor-eq{ font-size:12.5px; color:#64748b; font-variant-numeric:tabular-nums; font-weight:600; }
+
+  /* ---------- 结果页与复盘模态框 ---------- */
   .result{text-align:center}
   .result .emoji{font-size:46px;line-height:1;margin-bottom:8px}
   .result h2{margin:0 0 18px;font-size:20px;letter-spacing:-.3px}
@@ -233,32 +240,79 @@
   .result-grid > div{background:#f8fafc;border-radius:14px;padding:14px}
   .result-grid span{display:block;font-size:11.5px;color:#94a3b8;margin-bottom:4px}
   .result-grid b{font-size:22px;font-variant-numeric:tabular-nums}
-  .primary-btn{
-    width:100%;padding:15px;border-radius:15px;border:0;
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+  
+  .btn-group{display:flex;gap:10px;}
+  .primary-btn, .secondary-btn{
+    flex:1; padding:15px;border-radius:15px;border:0;
     font:inherit;font-size:16px;font-weight:700;cursor:pointer;
-    box-shadow:0 14px 26px -14px #6366f1;transition:.15s;
+    transition:.15s; display:flex; align-items:center; justify-content:center;
+  }
+  .primary-btn{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;
+    box-shadow:0 14px 26px -14px #6366f1;
   }
   .primary-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  
+  .secondary-btn{
+    background:#f1f5f9; color:#475569; border: 1px solid #e2e8f0;
+  }
+  .secondary-btn:hover{ background:#e2e8f0; transform:translateY(-1px);}
+
+  /* 模态框 */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15,23,42,0.6); display: flex; justify-content: center; align-items: center; z-index: 999;
+    padding: 20px; animation: pop 0.2s ease;
+  }
+  .modal-content {
+    background: #fff; border-radius: 20px; padding: 20px; width: 100%; max-width: 500px;
+    max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 24px 48px -12px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    font-size: 18px; font-weight: 800; color: #1e293b;
+  }
+  .close-btn {
+    background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8;
+  }
+  .history-list {
+    overflow-y: auto; flex: 1; margin: 0 -10px; padding: 0 10px;
+  }
+  .history-item {
+    display: flex; flex-direction: column; gap: 4px; padding: 12px; margin-bottom: 8px;
+    background: #f8fafc; border-radius: 12px; border-left: 4px solid #cbd5e1;
+  }
+  .history-item.correct { border-left-color: #10b981; background: #f0fdf4;}
+  .history-item.wrong { border-left-color: #ef4444; background: #fef2f2;}
+  .history-top { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px;}
+  .history-bottom { font-size: 13px; color: #64748b; }
+  .history-factor { color: #4f46e5; font-weight: 600; margin-top: 4px;}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1>质数记忆挑战</h1>
-    <p class="sub">1000 以内共有 <b>168</b> 个质数，来挑战你的记忆力</p>
+    <p class="sub">
+      <input type="number" id="rangeMin" value="1" min="1" max="1000"> - 
+      <input type="number" id="rangeMax" value="1000" min="2" max="1000"> 之间共有 
+      <b id="primeCountLabel">168</b> 个质数
+    </p>
   </header>
 
-  <nav class="tabs" id="tabs">
-    <button data-mode="flash">⚡ 闪电判断</button>
-    <button data-mode="rain">🌧️ 质数雨</button>
-    <button data-mode="whack">🔨 打地鼠</button>
-    <button data-mode="bomb">💣 质数拆弹</button>
-    <button data-mode="hunt">🎯 数字猎手</button>
-    <button data-mode="fill">🧩 质数填空</button>
-    <button data-mode="table">📖 质数表</button>
-    <button data-mode="tips">💡 倍数大全</button>
-  </nav>
+  <div class="tabs-wrapper">
+    <nav class="tabs" id="tabs">
+      <button data-mode="flash">⚡ 闪电判断</button>
+      <button data-mode="rain">🌧️ 质数雨</button>
+      <button data-mode="whack">🔨 打地鼠</button>
+      <button data-mode="bomb">💣 质数拆弹</button>
+      <button data-mode="hunt">🎯 数字猎手</button>
+      <button data-mode="fill">🧩 质数填空</button>
+      <button data-mode="table">📖 质数表</button>
+      <button data-mode="factor">🧮 因数分解</button>
+      <button data-mode="tips">💡 倍数大全</button>
+    </nav>
+  </div>
 
   <main id="stage"></main>
 </div>
@@ -268,14 +322,28 @@
   'use strict';
 
   /* ================= 基础数据 ================= */
-  const LIMIT = 1000;
-  const isPrime = new Array(LIMIT + 1).fill(true);
+  const MAX_LIMIT = 1000;
+  const isPrime = new Array(MAX_LIMIT + 1).fill(true);
   isPrime[0] = isPrime[1] = false;
-  for (let i = 2; i * i <= LIMIT; i++) {
-    if (isPrime[i]) for (let j = i * i; j <= LIMIT; j += i) isPrime[j] = false;
+  for (let i = 2; i * i <= MAX_LIMIT; i++) {
+    if (isPrime[i]) for (let j = i * i; j <= MAX_LIMIT; j += i) isPrime[j] = false;
   }
-  const PRIMES = [];
-  for (let i = 2; i <= LIMIT; i++) if (isPrime[i]) PRIMES.push(i);
+  const ALL_PRIMES = [];
+  const ALL_COMPOSITES = [];
+  for (let i = 2; i <= MAX_LIMIT; i++) {
+    if (isPrime[i]) ALL_PRIMES.push(i);
+    else if (i > 1) ALL_COMPOSITES.push(i);
+  }
+
+  // 全局动态范围
+  let rangeMin = 1;
+  let rangeMax = MAX_LIMIT;
+  let activePrimes = [...ALL_PRIMES];
+  let activeComposites = [...ALL_COMPOSITES];
+
+  // 复盘记录区
+  let roundHistory = [];
+  function resetHistory() { roundHistory = []; }
 
   /* ================= 工具函数 ================= */
   const rnd = n => Math.floor(Math.random() * n);
@@ -290,7 +358,7 @@
   function primeFactors(n) {
     const fs = [];
     let x = n;
-    for (const p of PRIMES) {
+    for (const p of ALL_PRIMES) {
       if (p * p > x) break;
       while (x % p === 0) { fs.push(p); x /= p; }
     }
@@ -301,19 +369,100 @@
     if (isPrime[n]) return n + ' 是质数，只能被 1 和它本身整除';
     return n + ' 是合数：' + primeFactors(n).join(' × ') + ' = ' + n;
   }
-  function randomComposite() {
-    let n;
-    if (Math.random() < 0.4) {
-      do { n = 3 + rnd(996); } while (isPrime[n] || n % 2 === 0);
+  
+  function getRandomPrime() {
+    if (activePrimes.length === 0) return 2;
+    return pick(activePrimes);
+  }
+  function getRandomComposite() {
+    if (activeComposites.length === 0) return pick(ALL_COMPOSITES);
+    const odds = activeComposites.filter(n => n % 2 !== 0);
+    if(odds.length > 0 && Math.random() < 0.6) return pick(odds);
+    return pick(activeComposites);
+  }
+
+  /* ================= 复盘 UI 组件 ================= */
+  function showReviewModal() {
+    if (roundHistory.length === 0) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    
+    let listHtml = roundHistory.map(h => {
+      const isCorr = h.isCorrect;
+      let details = `你的选择：<b>${h.userAns}</b> ｜ 正确答案：<b>${h.actual}</b>`;
+      let factorStr = '';
+      
+      if (!isPrime[h.num]) {
+        const fs = primeFactors(h.num);
+        const counts = {};
+        fs.forEach(f => counts[f] = (counts[f] || 0) + 1);
+        factorStr = '<div class="history-factor">分解：' + Object.keys(counts).map(f => counts[f] > 1 ? `${f}<sup>${counts[f]}</sup>` : f).join(' × ') + ' = ' + h.num + '</div>';
+      }
+      
+      return `
+        <div class="history-item ${isCorr ? 'correct' : 'wrong'}">
+          <div class="history-top">
+            <span>数字 ${h.num} ${isCorr ? '✓' : '✗'}</span>
+          </div>
+          <div class="history-bottom">${details}</div>
+          ${factorStr}
+        </div>
+      `;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>📖 本局复盘 (${roundHistory.length}题)</span>
+          <button class="close-btn" id="modalClose">×</button>
+        </div>
+        <div class="history-list">${listHtml}</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const close = () => overlay.remove();
+    overlay.querySelector('#modalClose').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) close(); });
+  }
+
+  function buildResultView(data) {
+    // data: { emoji, title, statsHtml, replayMode }
+    let btns = '';
+    if (roundHistory.length > 0) {
+      btns = `
+        <div class="btn-group">
+          <button class="secondary-btn" id="btnReview">📖 复盘本局</button>
+          <button class="primary-btn" id="again">再来一局</button>
+        </div>
+      `;
     } else {
-      do { n = 2 + rnd(998); } while (isPrime[n]);
+      btns = '<button class="primary-btn" id="again">再来一局</button>';
     }
-    return n;
+
+    return `
+      <div class="card result">
+        <div class="emoji">${data.emoji}</div>
+        <h2>${data.title}</h2>
+        <div class="result-grid">${data.statsHtml}</div>
+        ${btns}
+      </div>
+    `;
+  }
+
+  function bindResultEvents(mode) {
+    const againBtn = document.getElementById('again');
+    if(againBtn) againBtn.addEventListener('click', () => setMode(mode));
+    const revBtn = document.getElementById('btnReview');
+    if(revBtn) revBtn.addEventListener('click', showReviewModal);
   }
 
   /* ================= 模式切换框架 ================= */
   const stage = document.getElementById('stage');
   const tabs = document.getElementById('tabs');
+  const inputMin = document.getElementById('rangeMin');
+  const inputMax = document.getElementById('rangeMax');
+  const countLabel = document.getElementById('primeCountLabel');
   let cleanup = [];
 
   function clearCleanup() {
@@ -329,24 +478,65 @@
     hunt: renderHunt, 
     fill: renderFill, 
     table: renderTable,
+    factor: renderFactor,
     tips: renderTips
   };
 
+  let currentMode = 'flash';
+
   function setMode(mode) {
+    currentMode = mode;
+    resetHistory();
     clearCleanup();
     Array.prototype.forEach.call(tabs.children, b => {
       b.classList.toggle('active', b.dataset.mode === mode);
     });
     stage.innerHTML = '';
-    renderers[mode]();
+    if(renderers[mode]) renderers[mode]();
   }
 
+  // 标签页拖拽
+  let isDown = false, startX, scrollLeft, isDragging = false;
+  tabs.addEventListener('mousedown', (e) => {
+    isDown = true; isDragging = false; tabs.classList.add('dragging');
+    startX = e.pageX - tabs.offsetLeft; scrollLeft = tabs.scrollLeft;
+  });
+  document.addEventListener('mouseup', () => { isDown = false; tabs.classList.remove('dragging'); });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    const x = e.pageX - tabs.offsetLeft;
+    const walk = (x - startX) * 1.5; 
+    if (Math.abs(walk) > 5) { isDragging = true; e.preventDefault(); }
+    if (isDragging) tabs.scrollLeft = scrollLeft - walk;
+  });
   tabs.addEventListener('click', e => {
+    if (isDragging) { e.preventDefault(); e.stopPropagation(); return; }
     const btn = e.target.closest('button');
     if (btn) setMode(btn.dataset.mode);
   });
 
-  /* ================= 模式一：闪电判断 ================= */
+  function updateRange() {
+    let min = parseInt(inputMin.value) || 1;
+    let max = parseInt(inputMax.value) || 1000;
+    if (min < 1) min = 1;
+    if (max > 1000) max = 1000;
+    if (min >= max) min = Math.max(1, max - 1);
+    
+    rangeMin = min; rangeMax = max;
+    inputMin.value = rangeMin; inputMax.value = rangeMax;
+
+    activePrimes = ALL_PRIMES.filter(p => p >= rangeMin && p <= rangeMax);
+    activeComposites = [];
+    for(let i = rangeMin; i <= rangeMax; i++) {
+      if (!isPrime[i] && i > 1) activeComposites.push(i);
+    }
+    countLabel.textContent = activePrimes.length;
+    setMode(currentMode);
+  }
+  inputMin.addEventListener('change', updateRange);
+  inputMax.addEventListener('change', updateRange);
+
+  /* ================= 1. 闪电判断 ================= */
   function renderFlash() {
     let score = 0, combo = 0, bestCombo = 0, correct = 0, wrong = 0;
     let timeLeft = 60, locked = false, over = false, current = 0;
@@ -371,7 +561,7 @@
     const numEl = $('fNum'), fbEl = $('fFb'), barEl = $('fBar');
 
     function newNumber() {
-      current = Math.random() < 0.5 ? pick(PRIMES) : randomComposite();
+      current = Math.random() < 0.5 ? getRandomPrime() : getRandomComposite();
       numEl.textContent = current;
       if (numEl.animate) {
         numEl.animate(
@@ -383,8 +573,14 @@
 
     function answer(sayPrime) {
       if (locked || over) return;
-      locked = true;
       const actual = isPrime[current];
+      
+      roundHistory.push({
+        num: current,
+        isCorrect: actual === sayPrime,
+        userAns: sayPrime ? '质数' : '合数',
+        actual: actual ? '质数' : '合数'
+      });
 
       if (actual === sayPrime) {
         correct++;
@@ -394,17 +590,14 @@
         score += gain;
         $('fScore').textContent = score;
         $('fCombo').textContent = combo;
-        fbEl.className = 'feedback ok';
-        fbEl.textContent = '✓ ' + explain(current) + '　+' + gain;
-        setTimeout(() => {
-          if (over) return;
-          locked = false; fbEl.className = 'feedback'; fbEl.textContent = '';
-          newNumber();
-        }, 430);
+        
+        // 【优化】答对不显示过渡文字，直接立刻刷新下一题
+        newNumber();
       } else {
         wrong++;
         combo = 0;
         $('fCombo').textContent = '0';
+        locked = true;
         fbEl.className = 'feedback bad';
         fbEl.textContent = '✗ ' + explain(current);
         setTimeout(() => {
@@ -440,27 +633,26 @@
       const total = correct + wrong;
       const acc = total ? Math.round(correct / total * 100) : 0;
       const emoji = acc >= 90 && total >= 15 ? '🏆' : acc >= 70 ? '🎉' : '💪';
-      stage.innerHTML =
-        '<div class="card result">' +
-          '<div class="emoji">' + emoji + '</div><h2>时间到！</h2>' +
-          '<div class="result-grid">' +
-            '<div><span>总得分</span><b>' + score + '</b></div>' +
-            '<div><span>答对 / 答错</span><b>' + correct + ' / ' + wrong + '</b></div>' +
-            '<div><span>正确率</span><b>' + acc + '%</b></div>' +
-            '<div><span>最高连击</span><b>' + bestCombo + '</b></div>' +
-          '</div>' +
-          '<button class="primary-btn" id="again">再来一局</button>' +
-        '</div>';
-      document.getElementById('again').addEventListener('click', () => setMode('flash'));
+      
+      stage.innerHTML = buildResultView({
+        emoji: emoji,
+        title: '时间到！',
+        statsHtml: `
+          <div><span>总得分</span><b>${score}</b></div>
+          <div><span>答对 / 答错</span><b>${correct} / ${wrong}</b></div>
+          <div><span>正确率</span><b>${acc}%</b></div>
+          <div><span>最高连击</span><b>${bestCombo}</b></div>
+        `
+      });
+      bindResultEvents('flash');
     }
     newNumber();
   }
 
-  /* ================= 模式二：质数雨 (真正的20格平滑下落) ================= */
+  /* ================= 2. 质数雨 ================= */
   function renderRain() {
     let score = 0, lives = 3, gameOver = false;
-    const BRICK_H = 24;
-    const MAX_Y = 20;
+    const BRICK_H = 24, MAX_Y = 20;
     
     stage.innerHTML = `
       <div class="card" style="padding:0;">
@@ -481,7 +673,7 @@
     let nextId = 0;
 
     function addBrick(startY) {
-      const val = Math.random() < 0.6 ? pick(PRIMES) : randomComposite();
+      const val = Math.random() < 0.6 ? getRandomPrime() : getRandomComposite();
       const isP = isPrime[val];
       const el = document.createElement('div');
       el.className = 'brick';
@@ -493,20 +685,13 @@
       bricks.push(b);
     }
 
-    for(let i = 0; i < 15; i++) {
-      addBrick(-i);
-    }
+    for(let i = 0; i < 15; i++) addBrick(-i);
 
     function updateUI() {
       bricks.sort((a,b) => a.y - b.y);
-      
       bricks.forEach((b, i) => {
         b.el.style.top = (b.y * BRICK_H) + 'px';
-        if (b.y < -5) {
-          b.el.style.display = 'none';
-        } else {
-          b.el.style.display = 'flex';
-        }
+        b.el.style.display = b.y < -5 ? 'none' : 'flex';
 
         if (i === bricks.length - 1 && b.y < MAX_Y) {
           b.el.classList.add('active');
@@ -520,55 +705,56 @@
 
     function tick() {
       if (gameOver) return;
-      
       bricks.forEach(b => {
         b.y += 1;
         b.el.style.transition = 'top 0.9s linear';
       });
 
-      if (bricks.some(b => b.y >= MAX_Y)) {
-        endGame("砖块碰到底端！");
-        return;
+      if (bricks.some(b => b.y >= MAX_Y)) { 
+        const bottom = bricks[bricks.length-1];
+        if (bottom) {
+          roundHistory.push({ num: bottom.value, isCorrect: false, userAns: '未作答', actual: bottom.isPrime ? '质数' : '合数' });
+        }
+        endGame("砖块碰到底端！"); 
+        return; 
       }
 
       if (bricks.length < 15) {
         const minY = bricks.length > 0 ? Math.min(...bricks.map(b => b.y)) : 0;
         addBrick(minY - 1);
       }
-
       updateUI();
     }
 
     function judge(sayPrime) {
       if (gameOver) return;
-      
       const bottomBrick = bricks[bricks.length - 1];
       if (!bottomBrick || bottomBrick.y >= MAX_Y) return;
+
+      roundHistory.push({
+        num: bottomBrick.value,
+        isCorrect: bottomBrick.isPrime === sayPrime,
+        userAns: sayPrime ? '质数' : '合数',
+        actual: bottomBrick.isPrime ? '质数' : '合数'
+      });
 
       if (bottomBrick.isPrime === sayPrime) {
         score += 1;
         document.getElementById('rScore').textContent = score;
-        
         bottomBrick.el.remove();
         bricks.pop();
         updateUI();
       } else {
         lives--;
         document.getElementById('rLives').textContent = lives;
-        if (lives <= 0) {
-          endGame("生命值耗尽");
-          return;
-        }
+        if (lives <= 0) { endGame("生命值耗尽"); return; }
 
         bricks.forEach(b => {
           b.y += 5;
           b.el.style.transition = 'top 0.2s ease-in';
         });
 
-        if (bricks.some(b => b.y >= MAX_Y)) {
-          endGame("砖块超出底端！");
-          return;
-        }
+        if (bricks.some(b => b.y >= MAX_Y)) { endGame("砖块超出底端！"); return; }
         updateUI();
       }
     }
@@ -586,18 +772,15 @@
     function endGame(msg) {
       gameOver = true;
       clearInterval(tickTimer);
-      stage.innerHTML = `
-        <div class="card result">
-          <div class="emoji">💥</div><h2>游戏结束</h2>
-          <p style="color:#64748b;margin-bottom:20px;">${msg}</p>
-          <div class="result-grid">
-            <div><span>最终消除</span><b>${score}</b></div>
-            <div><span>剩余生命</span><b>${lives}</b></div>
-          </div>
-          <button class="primary-btn" id="again">再来一局</button>
-        </div>
-      `;
-      document.getElementById('again').addEventListener('click', () => setMode('rain'));
+      stage.innerHTML = buildResultView({
+        emoji: '💥',
+        title: '游戏结束',
+        statsHtml: `
+          <div><span>最终消除</span><b>${score}</b></div>
+          <div><span>剩余生命</span><b>${lives}</b></div>
+        `
+      });
+      bindResultEvents('rain');
     }
 
     const tickTimer = setInterval(tick, 1000);
@@ -605,7 +788,7 @@
     updateUI();
   }
 
-  /* ================= 模式三：打地鼠 ================= */
+  /* ================= 3. 打地鼠 ================= */
   function renderWhack() {
     let score = 0, lives = 3, gameOver = false;
     
@@ -629,9 +812,7 @@
       if (gameOver) return;
       const emptyHoles = [];
       for(let i=0; i<9; i++) {
-        if (!document.getElementById(`hole-${i}`).classList.contains('active')) {
-          emptyHoles.push(i);
-        }
+        if (!document.getElementById(`hole-${i}`).classList.contains('active')) emptyHoles.push(i);
       }
       if (emptyHoles.length === 0) return;
       
@@ -639,7 +820,7 @@
       const hole = document.getElementById(`hole-${holeIdx}`);
       
       const isP = Math.random() < 0.6;
-      const val = isP ? pick(PRIMES) : randomComposite();
+      const val = isP ? getRandomPrime() : getRandomComposite();
       
       hole.textContent = val;
       hole.className = 'hole active ' + (Math.random() < 0.5 ? 'pop-up' : 'pop-down');
@@ -647,7 +828,9 @@
       
       const lifeTimeout = setTimeout(() => {
         if (hole.classList.contains('active')) {
+          // 漏掉质数扣血
           if (hole.dataset.isPrime === 'true') {
+            roundHistory.push({ num: val, isCorrect: false, userAns: '未作答(超时)', actual: '质数' });
             loseLife();
           }
           hole.className = 'hole';
@@ -672,6 +855,7 @@
       if (!hole || gameOver) return;
       
       const isP = hole.dataset.isPrime === 'true';
+      const val = Number(hole.textContent);
       hole.className = 'hole';
       hole.textContent = '';
       
@@ -681,6 +865,7 @@
         hole.className = 'hole hit';
         setTimeout(() => { if(hole.className.includes('hit')) hole.className = 'hole'; }, 300);
       } else {
+        roundHistory.push({ num: val, isCorrect: false, userAns: '误点合数', actual: '合数' });
         loseLife();
         hole.className = 'hole miss';
         setTimeout(() => { if(hole.className.includes('miss')) hole.className = 'hole'; }, 300);
@@ -691,26 +876,27 @@
       gameOver = true;
       clearInterval(spawnLoop);
       activeTimeouts.forEach(clearTimeout);
-      stage.innerHTML = `
-        <div class="card result">
-          <div class="emoji">🔨</div><h2>游戏结束</h2>
-          <div class="result-grid">
-            <div><span>最终得分</span><b>${score}</b></div>
-            <div><span>生命耗尽</span><b>0</b></div>
-          </div>
-          <button class="primary-btn" id="again">再来一局</button>
-        </div>
-      `;
-      document.getElementById('again').addEventListener('click', () => setMode('whack'));
+      stage.innerHTML = buildResultView({
+        emoji: '🔨',
+        title: '游戏结束',
+        statsHtml: `
+          <div><span>最终得分</span><b>${score}</b></div>
+          <div><span>生命耗尽</span><b>0</b></div>
+        `
+      });
+      bindResultEvents('whack');
     }
     cleanup.push(() => { gameOver = true; activeTimeouts.forEach(clearTimeout); });
   }
 
-  /* ================= 模式四：质数拆弹 ================= */
+  /* ================= 4. 质数拆弹 ================= */
   function renderBomb() {
     let lives = 3, level = 1, gameOver = false;
     let currentNum = 0;
     let remainingFactors = [];
+    let timerId = null;
+    let timeLeft = 5.0;
+    let initialNum = 0; // 记录爆炸时的初始数字
     
     stage.innerHTML = `
       <div class="card" style="text-align:center;">
@@ -724,29 +910,40 @@
           <div style="color:#64748b; font-size:14px;" id="bombHint">请在下方选出能整除它的质数</div>
         </div>
         <div class="bomb-opts" id="bombOpts"></div>
-        <div class="feedback" id="bombFb" style="margin-top:20px; font-size:15px;"></div>
+        <div class="feedback" id="bombFb" style="margin-top:20px; font-size:14px; line-height:1.5;"></div>
+        <div class="progress" id="bombProgressWrap" style="margin-top:20px; opacity:0;"><i id="bombBar" style="transition:none; width:100%;"></i></div>
       </div>
     `;
 
     function nextLevel() {
       if (gameOver) return;
       
-      let factors = [];
-      while (true) {
-        factors = [];
-        const numFactors = Math.random() < 0.5 ? 2 : 3;
-        for (let i=0; i<numFactors; i++) {
-          factors.push(pick(PRIMES.filter(x => x < 40)));
+      let attempts = 0;
+      let found = false;
+      
+      while (attempts < 500) {
+        let num = rangeMin + rnd(rangeMax - rangeMin + 1);
+        if (num > 10 && !isPrime[num]) {
+           const factors = primeFactors(num);
+           // 【核心优化】彻底移除包含 2, 3, 5 因数的数字
+           if (factors.some(f => f === 2 || f === 3 || f === 5)) {
+              attempts++;
+              continue; 
+           }
+           currentNum = num;
+           initialNum = num;
+           remainingFactors = factors;
+           found = true;
+           break;
         }
-        factors.sort((a,b) => a-b);
-        const product = factors.reduce((a,b)=>a*b, 1);
-        if (product <= 1000 && product > 4) {
-          currentNum = product;
-          break;
-        }
+        attempts++;
       }
       
-      remainingFactors = factors;
+      // 极端情况保底（例如用户设范围只包含 2~10）
+      if (!found) {
+        currentNum = 221; initialNum = 221; remainingFactors = [13, 17];
+      }
+      
       renderBombUI();
     }
 
@@ -756,13 +953,35 @@
       document.getElementById('bombNum').textContent = currentNum;
       document.getElementById('bombIcon').textContent = '💣';
       
+      // 当前展示的正确答案（取剩余的第一个质因数）
       const correct = remainingFactors[0];
       const optsSet = new Set([correct]);
       
-      while (optsSet.size < 4) {
-        const isPerturbP = Math.random() < 0.5;
-        const val = isPerturbP ? pick(PRIMES) : randomComposite();
-        if (val !== correct && val < currentNum) optsSet.add(val);
+      // 【核心优化】极致迷惑：干扰项只取与正确答案大小相近的质数，绝对排除能整除的数字
+      const lower = Math.max(2, Math.floor(correct * 0.5));
+      const upper = Math.min(initialNum, Math.ceil(correct * 2.5));
+      
+      let pool = ALL_PRIMES.filter(p => 
+        p !== correct && 
+        p >= lower && p <= upper &&
+        !remainingFactors.includes(p) && // 不能包含其他正确答案
+        initialNum % p !== 0 // 绝不能用任何能整除初始数字的数作为干扰项
+      );
+      
+      // 如果该范围内干扰项不足3个，逐步放宽范围
+      if (pool.length < 3) {
+         pool = ALL_PRIMES.filter(p => 
+            p !== correct && 
+            !remainingFactors.includes(p) && 
+            initialNum % p !== 0
+         );
+      }
+      
+      pool = shuffle(pool);
+      let i = 0;
+      while(optsSet.size < 4 && i < pool.length) {
+         optsSet.add(pool[i]);
+         i++;
       }
       
       const opts = shuffle(Array.from(optsSet));
@@ -772,18 +991,86 @@
       
       document.getElementById('bombFb').className = 'feedback';
       document.getElementById('bombFb').textContent = '';
+      
+      startTimer();
+    }
+
+    function startTimer() {
+      if (timerId) clearInterval(timerId);
+      timeLeft = 5.0;
+      const bar = document.getElementById('bombBar');
+      const wrap = document.getElementById('bombProgressWrap');
+      
+      wrap.style.opacity = '1';
+      wrap.className = 'progress';
+      bar.style.transition = 'none';
+      bar.style.width = '100%';
+      
+      void bar.offsetWidth;
+      bar.style.transition = 'width 0.1s linear';
+      
+      timerId = setInterval(() => {
+        timeLeft -= 0.1;
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          handleTimeout();
+        } else {
+          bar.style.width = (timeLeft / 5.0 * 100) + '%';
+          if (timeLeft <= 2.0) wrap.classList.add('bomb-urgent');
+          if (timeLeft <= 1.0) wrap.classList.add('bomb-timeout');
+        }
+      }, 100);
+      cleanup.push(() => clearInterval(timerId));
+    }
+
+    function stopTimer() {
+      if (timerId) clearInterval(timerId);
+      document.getElementById('bombProgressWrap').style.opacity = '0';
+    }
+
+    function handleTimeout() {
+      if (gameOver) return;
+      lives--;
+      document.getElementById('bLives').textContent = lives;
+      
+      const fb = document.getElementById('bombFb');
+      fb.className = 'feedback bad';
+      // 【优化】显示全部分解
+      fb.innerHTML = `⏰ 超时引爆！<br>正确答案是：<b>${remainingFactors[0]}</b><br><span style="font-size:12px; color:#64748b">${initialNum} = ${primeFactors(initialNum).join(' × ')}</span>`;
+      document.getElementById('bombIcon').textContent = '💥';
+      
+      roundHistory.push({
+        num: initialNum,
+        isCorrect: false,
+        userAns: '超时',
+        actual: remainingFactors[0].toString()
+      });
+
+      Array.from(document.getElementById('bombOpts').children).forEach(b => b.disabled = true);
+      
+      if (lives <= 0) {
+        setTimeout(endGame, 2000);
+      } else {
+        setTimeout(nextLevel, 2000);
+      }
     }
 
     document.getElementById('bombOpts').addEventListener('click', e => {
       const btn = e.target.closest('.option');
-      if (!btn || gameOver) return;
+      if (!btn || gameOver || btn.disabled) return;
+      
+      stopTimer();
       
       const val = Number(btn.dataset.v);
       const fb = document.getElementById('bombFb');
+      const allBtns = document.getElementById('bombOpts').children;
       
       if (currentNum % val === 0 && isPrime[val]) {
+        Array.from(allBtns).forEach(b => b.disabled = true);
+        
         currentNum = currentNum / val;
-        remainingFactors.shift();
+        const idx = remainingFactors.indexOf(val);
+        if(idx !== -1) remainingFactors.splice(idx, 1);
         
         btn.style.background = '#ecfdf5';
         btn.style.borderColor = '#6ee7b7';
@@ -793,59 +1080,63 @@
           document.getElementById('bombIcon').textContent = '🎉';
           fb.className = 'feedback ok';
           fb.textContent = '成功拆除炸弹！';
-          setTimeout(() => {
-            level++;
-            nextLevel();
-          }, 1000);
+          setTimeout(() => { level++; nextLevel(); }, 1000);
         } else {
           fb.className = 'feedback ok';
           fb.textContent = '拆掉一层！继续拆解剩下的部分...';
-          setTimeout(() => {
-            renderBombUI();
-          }, 600);
+          setTimeout(() => { renderBombUI(); }, 600);
         }
       } else {
         lives--;
         document.getElementById('bLives').textContent = lives;
         fb.className = 'feedback bad';
-        fb.textContent = '💥 错误选择，炸弹爆炸了！';
+        // 【优化】显示全部分解
+        fb.innerHTML = `💥 错误！${val} 不能整除它。<br>正确答案是：<b>${remainingFactors[0]}</b><br><span style="font-size:12px; color:#64748b">${initialNum} = ${primeFactors(initialNum).join(' × ')}</span>`;
         document.getElementById('bombIcon').textContent = '💥';
         
+        roundHistory.push({
+          num: initialNum,
+          isCorrect: false,
+          userAns: val.toString(),
+          actual: remainingFactors[0].toString()
+        });
+
+        Array.from(allBtns).forEach(b => b.disabled = true);
+        
         if (lives <= 0) {
-          endGame();
+          setTimeout(endGame, 2000);
         } else {
-          setTimeout(() => {
-            nextLevel();
-          }, 1500);
+          setTimeout(nextLevel, 2000);
         }
       }
     });
 
     function endGame() {
       gameOver = true;
-      stage.innerHTML = `
-        <div class="card result">
-          <div class="emoji">💣</div><h2>拆弹失败</h2>
-          <div class="result-grid">
-            <div><span>成功拆弹</span><b>${level - 1} 次</b></div>
-          </div>
-          <button class="primary-btn" id="again">再来一局</button>
-        </div>
-      `;
-      document.getElementById('again').addEventListener('click', () => setMode('bomb'));
+      stopTimer();
+      stage.innerHTML = buildResultView({
+        emoji: '💣',
+        title: '拆弹失败',
+        statsHtml: `
+          <div><span>成功拆弹</span><b>${level - 1} 次</b></div>
+        `
+      });
+      bindResultEvents('bomb');
     }
-
+    
     nextLevel();
   }
 
-  /* ================= 模式五：数字猎手 ================= */
+  /* ================= 5. 数字猎手 ================= */
   function renderHunt() {
     const TOTAL = 20, PRIME_COUNT = 7;
     const chosen = new Set();
-    while (chosen.size < PRIME_COUNT) chosen.add(pick(PRIMES));
+    let safety = 0;
+    while (chosen.size < PRIME_COUNT && safety < 100) { 
+       chosen.add(getRandomPrime()); safety++;
+    }
     while (chosen.size < TOTAL) {
-      const n = 2 + rnd(998);
-      if (!isPrime[n]) chosen.add(n);
+      chosen.add(getRandomComposite());
     }
     const nums = shuffle(Array.from(chosen));
     const found = new Set();
@@ -898,22 +1189,32 @@
       if (!alive) return;
       const secs = ((Date.now() - t0) / 1000).toFixed(1);
       const acc = Math.round(PRIME_COUNT / (PRIME_COUNT + mistakes) * 100);
-      stage.innerHTML =
-        '<div class="card result">' +
-          '<div class="emoji">🎯</div><h2>全部找到了！</h2>' +
-          '<div class="result-grid">' +
-            '<div><span>用时</span><b>' + secs + 's</b></div>' +
-            '<div><span>错误次数</span><b>' + mistakes + '</b></div>' +
-            '<div><span>准确率</span><b>' + acc + '%</b></div>' +
-            '<div><span>找出质数</span><b>' + PRIME_COUNT + '</b></div>' +
-          '</div>' +
-          '<button class="primary-btn" id="again">再来一局</button>' +
-        '</div>';
-      document.getElementById('again').addEventListener('click', () => setMode('hunt'));
+      
+      // 【优化】猎手复盘，把所有出现的数字都塞进复盘里
+      nums.forEach(n => {
+         roundHistory.push({
+            num: n,
+            isCorrect: isPrime[n], // 实际上作为质数就是正确的
+            userAns: isPrime[n] ? '已找出' : '已避开',
+            actual: isPrime[n] ? '质数' : '合数'
+         });
+      });
+
+      stage.innerHTML = buildResultView({
+        emoji: '🎯',
+        title: '全部找到了！',
+        statsHtml: `
+          <div><span>用时</span><b>${secs}s</b></div>
+          <div><span>错误次数</span><b>${mistakes}</b></div>
+          <div><span>准确率</span><b>${acc}%</b></div>
+          <div><span>找出质数</span><b>${PRIME_COUNT}</b></div>
+        `
+      });
+      bindResultEvents('hunt');
     }
   }
 
-  /* ================= 模式六：质数填空 ================= */
+  /* ================= 6. 质数填空 ================= */
   function renderFill() {
     const TOTAL_Q = 10;
     let qi = 0, right = 0, q = null, answered = false, alive = true;
@@ -932,9 +1233,12 @@
       '</div>';
 
     function makeQ() {
+      let pool = activePrimes;
+      if (pool.length < 6) pool = ALL_PRIMES; 
+      
       const span = 6;
-      const start = rnd(PRIMES.length - span - 1);
-      const seq = PRIMES.slice(start, start + span);
+      const start = rnd(pool.length - span - 1);
+      const seq = pool.slice(start, start + span);
       const blankIdx = 1 + rnd(span - 2);
       const answer = seq[blankIdx];
       const used = new Set(seq);
@@ -981,6 +1285,13 @@
 
       Array.prototype.forEach.call(optsEl.children, b => { b.disabled = true; });
 
+      roundHistory.push({
+        num: q.answer,
+        isCorrect: v === q.answer,
+        userAns: v.toString(),
+        actual: q.answer.toString()
+      });
+
       if (v === q.answer) {
         right++;
         document.getElementById('qRight').textContent = right;
@@ -1018,48 +1329,115 @@
     function finish() {
       const acc = Math.round(right / TOTAL_Q * 100);
       const emoji = acc >= 90 ? '🏆' : acc >= 60 ? '🎉' : '💪';
-      stage.innerHTML =
-        '<div class="card result">' +
-          '<div class="emoji">' + emoji + '</div><h2>十题完成！</h2>' +
-          '<div class="result-grid">' +
-            '<div><span>答对</span><b>' + right + '/' + TOTAL_Q + '</b></div>' +
-            '<div><span>正确率</span><b>' + acc + '%</b></div>' +
-          '</div>' +
-          '<button class="primary-btn" id="again">再挑战一次</button>' +
-        '</div>';
-      document.getElementById('again').addEventListener('click', () => setMode('fill'));
+      stage.innerHTML = buildResultView({
+        emoji: emoji,
+        title: '十题完成！',
+        statsHtml: `
+          <div><span>答对</span><b>${right}/${TOTAL_Q}</b></div>
+          <div><span>正确率</span><b>${acc}%</b></div>
+        `
+      });
+      bindResultEvents('fill');
     }
 
     renderQ();
   }
 
-  /* ================= 模式七：质数表 ================= */
+  /* ================= 7. 质数表 ================= */
   function renderTable() {
+    const savedPrimes = JSON.parse(localStorage.getItem('savedPrimes') || '{}');
     const ranges = [
       [2, 100], [101, 200], [201, 300], [301, 400], [401, 500],
       [501, 600], [601, 700], [701, 800], [801, 900], [901, 1000]
     ];
 
     let html = '<div class="card">' +
-      '<p class="hint" style="margin:0 0 20px">点击数字可以把已经记住的质数标记出来 ✨</p>';
+      '<div class="table-actions">' +
+        '<p>点击数字标记你已记住的质数（自动存档）</p>' +
+        '<button class="clear-btn" id="clearSave">清空记录</button>' +
+      '</div>';
 
     for (const r of ranges) {
-      const list = PRIMES.filter(p => p >= r[0] && p <= r[1]);
+      const list = ALL_PRIMES.filter(p => p >= r[0] && p <= r[1]);
       html += '<div class="tgroup">' +
         '<h3>' + r[0] + ' – ' + r[1] + '<span>' + list.length + ' 个</span></h3>' +
         '<div class="chips">' +
-        list.map(p => '<span class="chip">' + p + '</span>').join('') +
+        list.map(p => {
+          const isOn = savedPrimes[p] ? ' on' : '';
+          return '<span class="chip' + isOn + '" data-p="' + p + '">' + p + '</span>';
+        }).join('') +
         '</div></div>';
     }
     html += '</div>';
     stage.innerHTML = html;
 
     stage.querySelectorAll('.chip').forEach(c => {
-      c.addEventListener('click', () => c.classList.toggle('on'));
+      c.addEventListener('click', () => {
+        const p = c.dataset.p;
+        const isNowOn = c.classList.toggle('on');
+        if (isNowOn) savedPrimes[p] = true;
+        else delete savedPrimes[p];
+        localStorage.setItem('savedPrimes', JSON.stringify(savedPrimes));
+      });
+    });
+
+    document.getElementById('clearSave').addEventListener('click', () => {
+      if (confirm('确定要清空所有已标记的质数记录吗？')) {
+        localStorage.removeItem('savedPrimes');
+        renderTable();
+      }
     });
   }
 
-  /* ================= 模式八：倍数技巧大全 ================= */
+  /* ================= 8. 质因数分解 ================= */
+  function renderFactor() {
+    const targets = ALL_COMPOSITES.filter(n => n % 2 !== 0 && n % 3 !== 0 && n % 5 !== 0);
+    const ranges = [
+      [2, 100], [101, 200], [201, 300], [301, 400], [401, 500],
+      [501, 600], [601, 700], [701, 800], [801, 900], [901, 1000]
+    ];
+
+    let html = '<div class="card">' +
+      '<div class="factor-note">' +
+        '💡 <b>练习说明：</b>这里已经为你过滤掉了 2、3、5 的倍数，因为它们的判断规律太简单啦！剩下的这些“硬骨头”合数，是你在质数判断中容易卡壳的盲点，攻克它们能大幅提升判断力。' +
+      '</div>';
+
+    let hasContent = false;
+    for (const r of ranges) {
+      const list = targets.filter(p => p >= r[0] && p <= r[1]);
+      if (list.length === 0) continue;
+      hasContent = true;
+
+      html += '<div class="tgroup">' +
+        '<h3>' + r[0] + ' – ' + r[1] + '<span>' + list.length + ' 个</span></h3>' +
+        '<div class="factor-grid">';
+      
+      list.forEach(n => {
+        const factors = primeFactors(n);
+        const counts = {};
+        factors.forEach(f => counts[f] = (counts[f] || 0) + 1);
+        const str = Object.keys(counts).map(f => {
+           return counts[f] > 1 ? `${f}<sup>${counts[f]}</sup>` : f;
+        }).join(' × ');
+
+        html += `<div class="factor-card">
+          <div class="factor-num">${n}</div>
+          <div class="factor-eq">${str}</div>
+        </div>`;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    if(!hasContent) {
+       html += '<p style="text-align:center;color:#94a3b8;padding:20px;">当前范围内没有符合条件的合数。</p>';
+    }
+    
+    html += '</div>';
+    stage.innerHTML = html;
+  }
+
+  /* ================= 9. 倍数技巧大全 ================= */
   function renderTips() {
     const tips = [
       {
@@ -1167,6 +1545,7 @@
   }
 
   /* ================= 启动 ================= */
+  updateRange();
   setMode('flash');
 })();
 </script>
